@@ -1,15 +1,17 @@
-"""Isolated test settings that do not require an external database service."""
+"""Isolated PostgreSQL test settings."""
 
 from .base import *  # noqa: F403 - Environment modules intentionally inherit base settings.
-from .base import get_csv_environment_value
+from .base import (
+    get_csv_environment_value,
+    get_postgresql_database_settings,
+    get_postgresql_test_database_name,
+)
 
 
 DEBUG = False
 ALLOWED_HOSTS = get_csv_environment_value("DJANGO_ALLOWED_HOSTS", default=("testserver",))
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
-    }
+DATABASES = {"default": get_postgresql_database_settings()}
+DATABASES["default"]["TEST"] = {
+    "NAME": get_postgresql_test_database_name(DATABASES["default"]["NAME"]),
 }
