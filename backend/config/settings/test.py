@@ -7,9 +7,10 @@ from .base import (
     get_postgresql_test_database_name,
 )
 
-
 DEBUG = False
-ALLOWED_HOSTS = get_csv_environment_value("DJANGO_ALLOWED_HOSTS", default=("testserver",))
+ALLOWED_HOSTS = get_csv_environment_value(
+    "DJANGO_ALLOWED_HOSTS", default=("testserver",)
+)
 
 DATABASES = {"default": get_postgresql_database_settings()}
 DATABASES["default"]["TEST"] = {

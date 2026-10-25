@@ -5,7 +5,6 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -90,11 +89,15 @@ def get_postgresql_database_settings() -> dict[str, str | int]:
     try:
         port = int(port_value)
     except ValueError as error:
-        message = "The POSTGRES_PORT environment variable must be an integer from 1 to 65535."
+        message = (
+            "The POSTGRES_PORT environment variable must be an integer from 1 to 65535."
+        )
         raise ImproperlyConfigured(message) from error
 
     if not 1 <= port <= 65535:
-        message = "The POSTGRES_PORT environment variable must be an integer from 1 to 65535."
+        message = (
+            "The POSTGRES_PORT environment variable must be an integer from 1 to 65535."
+        )
         raise ImproperlyConfigured(message)
 
     return {
