@@ -7,7 +7,6 @@ from .base import (
     get_postgresql_database_settings,
 )
 
-
 DEBUG = get_boolean_environment_value("DJANGO_DEBUG", default=True)
 ALLOWED_HOSTS = get_csv_environment_value(
     "DJANGO_ALLOWED_HOSTS", default=("localhost", "127.0.0.1")
