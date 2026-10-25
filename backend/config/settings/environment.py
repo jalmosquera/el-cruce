@@ -4,7 +4,6 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
-
 SETTINGS_MODULES = {
     "development": "config.settings.development",
     "test": "config.settings.test",
