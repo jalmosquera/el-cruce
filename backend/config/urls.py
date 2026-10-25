@@ -1,6 +1,5 @@
-"""Root URL configuration.
+"""Root URL configuration."""
 
-Domain routes will be registered here when their approved implementations exist.
-"""
+from django.urls import include, path
 
-urlpatterns = []
+urlpatterns = [path("api/auth/", include("identity.urls"))]

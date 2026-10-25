@@ -142,7 +142,9 @@ def test_test_settings_use_a_different_postgresql_database_name() -> None:
 
     assert test.DEBUG is False
     assert database["ENGINE"] == "django.db.backends.postgresql"
-    assert database["TEST"]["NAME"] == "test_elcruce_infra05_source"
+    assert database["TEST"]["NAME"] == base.get_postgresql_test_database_name(
+        base.get_environment_value("POSTGRES_DB")
+    )
 
 
 @pytest.mark.django_db
@@ -150,8 +152,10 @@ def test_django_uses_the_explicitly_isolated_postgresql_test_database() -> None:
     configured_database = connection.settings_dict
 
     assert connection.vendor == "postgresql"
-    assert configured_database["NAME"] == "test_elcruce_infra05_source"
-    assert configured_database["NAME"] != "elcruce_infra05_source"
+    assert configured_database["NAME"] == base.get_postgresql_test_database_name(
+        base.get_environment_value("POSTGRES_DB")
+    )
+    assert configured_database["NAME"] != base.get_environment_value("POSTGRES_DB")
 
 
 def test_development_settings_apply_the_development_defaults(
@@ -192,9 +196,11 @@ def test_production_settings_enable_cookie_security(
     assert production.ALLOWED_HOSTS == ["elcruce.example"]
     assert production.CSRF_COOKIE_SECURE is True
     assert production.SESSION_COOKIE_SECURE is True
+    assert production.JWT_REFRESH_COOKIE_SECURE is True
 
 
-def test_root_url_configuration_has_no_unapproved_domain_routes() -> None:
+def test_root_url_configuration_registers_only_the_approved_identity_routes() -> None:
     from config.urls import urlpatterns
 
-    assert urlpatterns == []
+    assert len(urlpatterns) == 1
+    assert str(urlpatterns[0].pattern) == "api/auth/"

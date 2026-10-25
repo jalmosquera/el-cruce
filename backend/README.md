@@ -75,7 +75,59 @@ set -gx POSTGRES_PASSWORD "test-only-password"
 uv run pytest
 ```
 
-The test configuration collects `tests/`, runs branch coverage for `config`,
-and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+The test configuration collects `tests/`, runs branch coverage for `config` and
+`identity`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
+
+## Authentication API contract
+
+The browser client keeps the short-lived access token only in memory and sends
+it as `Authorization: Bearer <access-token>`. Refresh tokens are never returned
+in JSON: they use the `elcruce_refresh` HttpOnly cookie, scoped to
+`/api/auth/`, with `SameSite=Lax`. It is marked `Secure` in production; local
+development and tests deliberately omit that flag for HTTP.
+
+`POST /api/auth/login/` accepts `username` and `password` and returns only:
+
+```json
+{"access": "<short-lived-jwt>"}
+```
+
+It also sets the refresh cookie and Django's readable `csrftoken` cookie.
+Invalid credentials return `401 Unauthorized` and do not set an
+`elcruce_refresh` cookie:
+
+```json
+{
+  "detail": "No active account found with the given credentials"
+}
+```
+
+`POST /api/auth/refresh/` has no body: it requires both the refresh cookie and
+its `csrftoken` value in the `X-CSRFToken` header. It returns the same access
+payload, replaces the refresh cookie, and blacklists the submitted token.
+A missing refresh cookie returns `400`. A missing or invalid CSRF cookie/header
+pair fails CSRF validation and returns `403`. Expired, malformed, blacklisted,
+or replayed refresh tokens return `401`.
+
+`POST /api/auth/logout/` requires the same CSRF protection, blacklists a valid
+refresh cookie, clears it, and returns `204`. It remains idempotent when the
+cookie is absent, expired, or malformed.
+
+`GET /api/auth/me/` requires a Bearer access token and returns the authenticated
+internal user's server-authoritative `id`, `username`, and `role`. Supported
+roles are `administrator`, `manager`, and `employee`; all may access only this
+self endpoint. The detailed role-to-resource permission matrix remains outside
+FEAT-02 and requires approval before domain endpoints are added.
+
+Without a Bearer access token, `GET /api/auth/me/` returns `401 Unauthorized`:
+
+```json
+{
+  "detail": "Las credenciales de autenticación no se proveyeron."
+}
+```
+
+Access tokens last five minutes. Refresh tokens last seven days, rotate on use,
+and use the SimpleJWT blacklist application for revocation.
