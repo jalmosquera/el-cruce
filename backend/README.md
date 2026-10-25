@@ -56,3 +56,26 @@ uv run python manage.py test --keepdb --noinput
 `DJANGO_ALLOWED_HOSTS`, and uses the same mandatory PostgreSQL settings. It
 rejects blank or obvious placeholder configuration; it never falls back to
 SQLite or Django's dummy backend.
+
+## Backend tests
+
+Pytest always uses `config.settings.test` and Django creates only the explicit
+`test_<POSTGRES_DB>` database. It never migrates or flushes `POSTGRES_DB`.
+Run it against a disposable PostgreSQL instance, using a source name that is
+not a development database:
+
+```fish
+set -gx EL_CRUCE_ENVIRONMENT test
+set -gx DJANGO_SECRET_KEY "test-only-secret-key-not-for-production"
+set -gx POSTGRES_HOST "127.0.0.1"
+set -gx POSTGRES_PORT 55439
+set -gx POSTGRES_DB "elcruce_infra05_source"
+set -gx POSTGRES_USER "elcruce_test"
+set -gx POSTGRES_PASSWORD "test-only-password"
+uv run pytest
+```
+
+The test configuration collects `tests/`, runs branch coverage for `config`,
+and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+the file is ignored by Git. Do not run database tests with production
+credentials or a non-disposable PostgreSQL server.
