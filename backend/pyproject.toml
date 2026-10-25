@@ -27,7 +27,10 @@ skip_covered = true
 target-version = "py314"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*.py" = ["F403", "F405"]
 
 [dependency-groups]
 dev = [
