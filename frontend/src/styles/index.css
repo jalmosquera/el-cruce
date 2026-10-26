@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f7f1e7;
-  color: #29271f;
+  background: #20231c;
+  color: #f4eddd;
 }
 
 body {
@@ -21,37 +21,83 @@ html {
 }
 
 .display-font {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Iowan Old Style, Baskerville, Georgia, "Times New Roman", serif;
 }
 
 .paper-grain {
-  background-image: radial-gradient(rgba(58, 46, 33, 0.1) 0.6px, transparent 0.6px);
-  background-size: 7px 7px;
+  background-image: radial-gradient(rgba(244, 237, 221, 0.07) 0.6px, transparent 0.7px);
+  background-size: 6px 6px;
 }
 
 .abstract-sunrise {
   background:
-    radial-gradient(circle at 72% 24%, rgba(245, 206, 142, 0.95) 0 7%, transparent 7.3%),
-    radial-gradient(ellipse at 69% 82%, rgba(196, 107, 64, 0.92) 0 22%, transparent 22.4%),
-    linear-gradient(142deg, #3f594a 0%, #778770 45%, #cab078 45.4%, #db9a64 100%);
+    radial-gradient(circle at 75% 24%, rgba(224, 180, 104, 0.9) 0 6%, transparent 6.4%),
+    radial-gradient(ellipse at 69% 86%, rgba(178, 79, 50, 0.9) 0 20%, transparent 20.4%),
+    linear-gradient(137deg, #172019 0%, #3b4934 47%, #897146 47.4%, #b8603e 100%);
 }
 
 .abstract-table {
   background:
-    linear-gradient(116deg, transparent 0 50%, rgba(255, 241, 206, 0.9) 50.3% 52%, transparent 52.3%),
-    radial-gradient(ellipse at 50% 74%, #e4bc78 0 14%, transparent 14.4%),
-    linear-gradient(140deg, #5b3224 0 30%, #aa6340 30.3% 58%, #d69b5f 58.3% 100%);
+    linear-gradient(116deg, transparent 0 50%, rgba(244, 237, 221, 0.85) 50.3% 52%, transparent 52.3%),
+    radial-gradient(ellipse at 50% 74%, #cfa35e 0 14%, transparent 14.4%),
+    linear-gradient(140deg, #2e2820 0 30%, #8f4b34 30.3% 58%, #bd8150 58.3% 100%);
 }
 
 .abstract-window {
   background:
-    linear-gradient(90deg, transparent 0 46%, rgba(73, 70, 54, 0.85) 46.5% 51.5%, transparent 52%),
-    linear-gradient(0deg, transparent 0 52%, rgba(73, 70, 54, 0.85) 52.5% 57.5%, transparent 58%),
-    linear-gradient(140deg, #9aa7a1 0%, #d5c697 54%, #c77b55 54.4%, #794d38 100%);
+    linear-gradient(90deg, transparent 0 46%, rgba(29, 35, 27, 0.9) 46.5% 51.5%, transparent 52%),
+    linear-gradient(0deg, transparent 0 52%, rgba(29, 35, 27, 0.9) 52.5% 57.5%, transparent 58%),
+    linear-gradient(140deg, #61706a 0%, #9d9364 54%, #a34f36 54.4%, #583827 100%);
+}
+
+.landing-grain {
+  background-image:
+    radial-gradient(rgba(244, 237, 221, 0.055) 0.65px, transparent 0.7px),
+    linear-gradient(112deg, rgba(224, 180, 104, 0.045), transparent 32%);
+  background-size: 6px 6px, 100% 100%;
+}
+
+.eyebrow-rule::before {
+  content: "";
+  display: inline-block;
+  width: 2.25rem;
+  height: 1px;
+  margin-right: 0.8rem;
+  vertical-align: middle;
+  background: currentColor;
+}
+
+.entrance-reveal {
+  animation: entrance-reveal 700ms cubic-bezier(0.2, 0.65, 0.25, 1) both;
+}
+
+.entrance-reveal-delayed {
+  animation: entrance-reveal 700ms 130ms cubic-bezier(0.2, 0.65, 0.25, 1) both;
+}
+
+@keyframes entrance-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
