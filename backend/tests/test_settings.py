@@ -166,23 +166,28 @@ def test_test_settings_use_a_different_postgresql_database_name() -> None:
     from config.settings import test
 
     database = test.DATABASES["default"]
+    application_database_name = os.environ["POSTGRES_DB"]
+    expected_test_database_name = base.get_postgresql_test_database_name(
+        application_database_name
+    )
 
     assert test.DEBUG is False
     assert database["ENGINE"] == "django.db.backends.postgresql"
-    assert database["TEST"]["NAME"] == base.get_postgresql_test_database_name(
-        base.get_environment_value("POSTGRES_DB")
-    )
+    assert database["TEST"]["NAME"] == expected_test_database_name
+    assert database["TEST"]["NAME"] != application_database_name
 
 
 @pytest.mark.django_db
 def test_django_uses_the_explicitly_isolated_postgresql_test_database() -> None:
     configured_database = connection.settings_dict
+    application_database_name = os.environ["POSTGRES_DB"]
+    expected_test_database_name = base.get_postgresql_test_database_name(
+        application_database_name
+    )
 
     assert connection.vendor == "postgresql"
-    assert configured_database["NAME"] == base.get_postgresql_test_database_name(
-        base.get_environment_value("POSTGRES_DB")
-    )
-    assert configured_database["NAME"] != base.get_environment_value("POSTGRES_DB")
+    assert configured_database["NAME"] == expected_test_database_name
+    assert configured_database["NAME"] != application_database_name
 
 
 def test_development_settings_apply_the_development_defaults(
