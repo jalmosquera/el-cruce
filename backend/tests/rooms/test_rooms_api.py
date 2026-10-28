@@ -1,11 +1,16 @@
 """PostgreSQL-backed model and API tests for internal room management."""
 
+from datetime import timedelta
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from rest_framework.test import APIClient
 
+from guests.models import Guest
 from identity.models import User, UserRole
+from reservations.models import Reservation, ReservationStatus
 from rooms.models import Room, RoomStatus
 
 pytestmark = pytest.mark.django_db
@@ -199,3 +204,129 @@ def test_create_room_returns_a_field_error_for_a_duplicate_code(room: Room) -> N
 
     assert response.status_code == 400
     assert response.data == {"code": ["A room with this code already exists."]}
+
+
+def _future_stay(offset_days: int = 30, nights: int = 2):
+    check_in = timezone.localdate() + timedelta(days=offset_days)
+    return check_in, check_in + timedelta(days=nights)
+
+
+def _create_reservation(
+    room: Room,
+    *,
+    status: str = ReservationStatus.PENDING,
+    guest_count: int = 2,
+) -> Reservation:
+    guest = Guest.objects.create(display_name=f"Guest for {room.code}")
+    check_in, check_out = _future_stay()
+    return Reservation.objects.create(
+        room=room,
+        guest=guest,
+        check_in=check_in,
+        check_out=check_out,
+        guest_count=guest_count,
+        status=status,
+    )
+
+
+@pytest.mark.parametrize(
+    "reservation_status",
+    [ReservationStatus.PENDING, ReservationStatus.CANCELLED],
+)
+def test_deleting_a_room_with_a_reservation_returns_conflict(
+    room: Room, reservation_status: str
+) -> None:
+    _create_reservation(room, status=reservation_status)
+    client = authenticated_client(UserRole.MANAGER)
+
+    response = client.delete(f"{ROOMS_URL}{room.pk}/")
+
+    assert response.status_code == 409
+    assert response.data["detail"].code == "room_in_use"
+    assert str(response.data["detail"]) == (
+        "This room cannot be deleted because a reservation references it."
+    )
+    assert Room.objects.filter(pk=room.pk).exists()
+
+
+def test_capacity_cannot_be_reduced_below_an_occupying_reservation(
+    room: Room,
+) -> None:
+    _create_reservation(room, status=ReservationStatus.CONFIRMED, guest_count=2)
+    client = authenticated_client(UserRole.MANAGER)
+
+    response = client.patch(
+        f"{ROOMS_URL}{room.pk}/",
+        {"capacity": 1},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert (
+        response.data["capacity"][0].code
+        == "capacity_below_occupying_guest_count"
+    )
+    room.refresh_from_db()
+    assert room.capacity == 2
+
+
+def test_capacity_may_be_reduced_to_the_largest_occupying_guest_count(
+    room: Room,
+) -> None:
+    room.capacity = 3
+    room.save(update_fields=["capacity"])
+    _create_reservation(room, status=ReservationStatus.CHECKED_IN, guest_count=2)
+    client = authenticated_client(UserRole.MANAGER)
+
+    response = client.patch(
+        f"{ROOMS_URL}{room.pk}/",
+        {"capacity": 2},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["capacity"] == 2
+
+
+def test_capacity_is_revalidated_after_the_room_row_is_locked(
+    room: Room, monkeypatch
+) -> None:
+    """A stale pre-lock capacity check must not bypass the invariant."""
+    _create_reservation(room, status=ReservationStatus.CONFIRMED, guest_count=2)
+    # Simulate the serializer observing the room before a concurrent reservation
+    # was committed: the pre-lock check passes and the locked recheck must reject.
+    monkeypatch.setattr(
+        "rooms.serializers.RoomSerializer.validate_capacity",
+        lambda self, value: value,
+    )
+    client = authenticated_client(UserRole.MANAGER)
+
+    response = client.patch(
+        f"{ROOMS_URL}{room.pk}/",
+        {"capacity": 1},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert (
+        response.data["capacity"][0].code
+        == "capacity_below_occupying_guest_count"
+    )
+    room.refresh_from_db()
+    assert room.capacity == 2
+
+
+def test_terminal_reservations_do_not_constrain_capacity_reductions(
+    room: Room,
+) -> None:
+    _create_reservation(room, status=ReservationStatus.CANCELLED, guest_count=2)
+    client = authenticated_client(UserRole.MANAGER)
+
+    response = client.patch(
+        f"{ROOMS_URL}{room.pk}/",
+        {"capacity": 1},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["capacity"] == 1
