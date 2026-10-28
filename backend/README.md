@@ -95,6 +95,13 @@ in JSON: they use the `elcruce_refresh` HttpOnly cookie, scoped to
 `/api/auth/`, with `SameSite=Lax`. It is marked `Secure` in production; local
 development and tests deliberately omit that flag for HTTP.
 
+The login and refresh endpoints ignore the `Authorization` header entirely.
+A stale, expired, or malformed Bearer token must never block acquiring or
+renewing credentials: both endpoints return success for valid credentials or a
+valid refresh cookie regardless of the header. Login still validates
+`username`/`password`, refresh still validates its cookie, and refresh CSRF
+protection is unchanged.
+
 `POST /api/auth/login/` accepts `username` and `password` and returns only:
 
 ```json
@@ -180,7 +187,11 @@ be an integer greater than zero. `status` is required and must be one of
 ## Menu API contract
 
 `GET /api/menu/public/?language={language}` is public and returns only published
-categories containing published dishes. `language` accepts `es` (the default),
+categories containing published dishes. The endpoint ignores authentication
+headers entirely: anonymous requests and requests carrying a valid, expired, or
+malformed Bearer token all return the same public menu without `401`. This does
+not affect internal menu management endpoints, which still require a valid
+Bearer access token. `language` accepts `es` (the default),
 `en`, `fr`, `de`, or `it`; another value returns `400`. For a requested foreign
 language, persisted translations provide `name` and `description`, while
 `spanish_name` and `spanish_description` always preserve the Spanish source.

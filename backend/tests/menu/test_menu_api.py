@@ -1,10 +1,12 @@
 """PostgreSQL-backed tests for the multilingual menu APIs."""
 
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 from django.db import IntegrityError, transaction
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import AccessToken
 
 from identity.models import User, UserRole
 from menu.models import Category, CategoryTranslation, Dish, DishTranslation
@@ -47,6 +49,18 @@ def authenticated_client(user: User) -> APIClient:
     client = APIClient()
     client.force_authenticate(user=user)
     return client
+
+
+def client_with_bearer_token(token: str) -> APIClient:
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    return client
+
+
+def expired_access_token(user: User) -> str:
+    token = AccessToken.for_user(user)
+    token.set_exp(lifetime=timedelta(minutes=-1))
+    return str(token)
 
 
 def test_dish_constraints_require_a_positive_unique_number_and_non_negative_price(
@@ -158,6 +172,45 @@ def test_public_menu_rejects_unsupported_languages() -> None:
 
     assert response.status_code == 400
     assert "language" in response.data
+
+
+def test_public_menu_returns_200_for_anonymous_requests() -> None:
+    response = APIClient().get(PUBLIC_MENU_URL)
+
+    assert response.status_code == 200
+
+
+def test_public_menu_returns_200_for_a_valid_access_token(employee: User) -> None:
+    response = client_with_bearer_token(str(AccessToken.for_user(employee))).get(
+        PUBLIC_MENU_URL
+    )
+
+    assert response.status_code == 200
+
+
+def test_public_menu_ignores_an_expired_access_token(employee: User) -> None:
+    response = client_with_bearer_token(expired_access_token(employee)).get(
+        PUBLIC_MENU_URL
+    )
+
+    assert response.status_code == 200
+
+
+def test_public_menu_ignores_a_malformed_bearer_token() -> None:
+    response = client_with_bearer_token("not-a-jwt").get(PUBLIC_MENU_URL)
+
+    assert response.status_code == 200
+
+
+def test_protected_menu_management_still_rejects_an_expired_access_token(
+    employee: User,
+) -> None:
+    response = client_with_bearer_token(expired_access_token(employee)).get(
+        CATEGORIES_URL
+    )
+
+    assert response.status_code == 401
+    assert response.data["code"] == "token_not_valid"
 
 
 @pytest.mark.parametrize("role", (UserRole.MANAGER, UserRole.ADMINISTRATOR))
