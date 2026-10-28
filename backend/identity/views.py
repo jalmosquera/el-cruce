@@ -8,7 +8,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -26,11 +25,23 @@ def get_refresh_token_from_cookie(request) -> str:
     return refresh_token
 
 
+class PreserveUnauthorizedStatusMixin:
+    """Keep 401 responses when authentication is intentionally disabled.
+
+    DRF converts authentication failures to 403 when no authenticator provides
+    a challenge. Token-acquisition endpoints must ignore stale Authorization
+    headers but still report invalid credentials as 401.
+    """
+
+    def get_authenticate_header(self, request) -> str:
+        return "Bearer"
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
-class LoginView(APIView):
+class LoginView(PreserveUnauthorizedStatusMixin, APIView):
     """Authenticate an internal user and issue browser-safe JWT credentials."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = ()
     permission_classes = [AllowAny]
 
     def post(self, request) -> Response:
@@ -43,10 +54,10 @@ class LoginView(APIView):
 
 
 @method_decorator(csrf_protect, name="dispatch")
-class RefreshView(APIView):
+class RefreshView(PreserveUnauthorizedStatusMixin, APIView):
     """Rotate the refresh cookie and return a replacement access token."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = ()
     permission_classes = [AllowAny]
 
     def post(self, request) -> Response:
