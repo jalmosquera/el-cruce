@@ -1,4 +1,4 @@
-import { apiClient } from '../../lib/apiClient.js'
+import { publicApiClient } from '../../lib/publicApiClient.js'
 
 export const MENU_LANGUAGES = [
   { code: 'es', label: 'Español', locale: 'es-ES' },
@@ -141,7 +141,7 @@ function validateMenuPayload(payload) {
 }
 
 export async function fetchPublicMenu(language, { signal } = {}) {
-  const response = await apiClient.get('/menu/public/', {
+  const response = await publicApiClient.get('/menu/public/', {
     params: { language },
     signal,
   })

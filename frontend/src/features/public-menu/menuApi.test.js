@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { apiClient, clearAccessToken, setAccessToken } from '../../lib/apiClient.js'
+import { clearAccessToken, setAccessToken } from '../../lib/apiClient.js'
+import { publicApiClient } from '../../lib/publicApiClient.js'
 import { MenuPayloadError, fetchPublicMenu } from './menuApi.js'
 
-const originalAdapter = apiClient.defaults.adapter
+const originalAdapter = publicApiClient.defaults.adapter
 
 function validPayload() {
   return {
@@ -41,21 +42,18 @@ function captureRequest(responseData = validPayload()) {
     statusText: 'OK',
   }))
 
-  apiClient.defaults.adapter = adapter
+  publicApiClient.defaults.adapter = adapter
   return adapter
 }
 
 afterEach(() => {
-  apiClient.defaults.adapter = originalAdapter
+  publicApiClient.defaults.adapter = originalAdapter
   clearAccessToken()
 })
 
 describe('fetchPublicMenu', () => {
-  it('requests the public menu even when the shared client holds an access token', async () => {
-    // apiClient is shared with the authenticated dashboard and may attach the
-    // in-memory bearer token for same-origin requests. The public endpoint must
-    // keep working with that header present.
-    setAccessToken('menu-test-token')
+  it('does not send the shared client access token with public menu requests', async () => {
+    setAccessToken('expired-token')
     const adapter = captureRequest()
 
     await expect(fetchPublicMenu('en')).resolves.toEqual(validPayload())
@@ -65,9 +63,10 @@ describe('fetchPublicMenu', () => {
       url: '/menu/public/',
       params: { language: 'en' },
     }))
+    expect(adapter.mock.calls[0][0].headers.Authorization).toBeUndefined()
   })
 
-  it('forwards the abort signal to the shared client', async () => {
+  it('forwards the abort signal to the public client', async () => {
     const adapter = captureRequest()
     const controller = new AbortController()
 
@@ -79,7 +78,7 @@ describe('fetchPublicMenu', () => {
   it('propagates transport errors without altering them', async () => {
     const transportError = Object.assign(new Error('Bad Request'), { response: { status: 400 } })
 
-    apiClient.defaults.adapter = vi.fn(() => Promise.reject(transportError))
+    publicApiClient.defaults.adapter = vi.fn(() => Promise.reject(transportError))
 
     await expect(fetchPublicMenu('xx')).rejects.toBe(transportError)
   })

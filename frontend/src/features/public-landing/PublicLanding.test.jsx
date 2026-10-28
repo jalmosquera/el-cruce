@@ -40,7 +40,7 @@ describe('PublicLanding', () => {
     expect(screen.getByText('Una primera mirada a El Cruce. La información de esta página está pendiente de verificación.')).toBeTruthy()
     expect(screen.getAllByText('Visual abstracto · no es fotografía')).toHaveLength(2)
     expect(screen.getByText('La carta completa reúne los platos publicados, sus precios y alérgenos declarados.')).toBeTruthy()
-    expect(screen.getByText('La carta pública se actualiza desde el panel interno. La información de alojamiento, contacto y reservas se publicará cuando esté verificada.')).toBeTruthy()
+    expect(screen.getByText('La carta pública se gestiona mediante la administración interna y la API. La información de alojamiento, contacto y reservas se publicará cuando esté verificada.')).toBeTruthy()
     expect(screen.getByText('No se muestran habitaciones, servicios ni tarifas mientras no haya datos verificados.')).toBeTruthy()
     expect(screen.getByText('Sin reservas en línea')).toBeTruthy()
     expect(screen.queryByText('Próximamente')).toBeNull()
