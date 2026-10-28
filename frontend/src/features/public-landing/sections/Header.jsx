@@ -32,14 +32,14 @@ export function Header() {
           aria-expanded={isMenuOpen}
           aria-controls="mobile-navigation"
           onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
-          className="grid size-11 place-items-center rounded-full border border-[#f4eddd]/50 bg-[#20231c]/30 text-xs font-semibold uppercase tracking-[0.12em] transition hover:border-[#dfb468] hover:text-[#dfb468] focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd] md:hidden"
+          className="grid size-11 place-items-center rounded-full border border-[#f4eddd]/50 bg-[#131313]/30 text-xs font-semibold uppercase tracking-[0.12em] transition hover:border-[#dfb468] hover:text-[#dfb468] focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd] md:hidden"
         >
           <span className="sr-only">{isMenuOpen ? 'Cerrar' : 'Abrir'} navegación</span>
           <span aria-hidden="true">{isMenuOpen ? '×' : 'Menú'}</span>
         </button>
       </div>
       {isMenuOpen && (
-        <nav id="mobile-navigation" aria-label="Navegación móvil" className="border-y border-[#f4eddd]/20 bg-[#20231c]/95 px-5 py-6 backdrop-blur-sm md:hidden">
+        <nav id="mobile-navigation" aria-label="Navegación móvil" className="border-y border-[#f4eddd]/20 bg-[#131313]/95 px-5 py-6 backdrop-blur-sm md:hidden">
           <ul className="mx-auto grid max-w-7xl gap-4 text-sm font-semibold uppercase tracking-[0.16em]">
             {navigationItems.map((item) => (
               <li key={item.href}>

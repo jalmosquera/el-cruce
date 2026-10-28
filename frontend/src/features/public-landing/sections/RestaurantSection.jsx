@@ -8,7 +8,7 @@ export function RestaurantSection() {
         </div>
         <div className="grid gap-7 sm:grid-cols-[1fr_0.85fr] sm:items-end">
           <div className="abstract-table relative aspect-[4/5] overflow-hidden border border-[#e1bd78]/30 bg-[#8f4b34] shadow-[12px_12px_0_#161914] transition duration-500 hover:-translate-y-1 hover:shadow-[16px_16px_0_#161914]">
-            <p className="absolute bottom-3 right-3 border border-[#f4eddd]/20 bg-[#20231c]/75 px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.13em] text-[#f4eddd]">Visual abstracto</p>
+            <p className="absolute bottom-3 right-3 border border-[#f4eddd]/20 bg-[#131313]/75 px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.13em] text-[#f4eddd]">Visual abstracto</p>
           </div>
           <div className="pb-2">
             <p className="text-lg leading-8 text-[#eee6d5]">La propuesta gastronómica y sus detalles se incorporarán cuando sean confirmados por el establecimiento.</p>

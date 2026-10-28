@@ -3,7 +3,7 @@ export function AccommodationSection() {
     <section id="estancia" aria-labelledby="accommodation-title" className="scroll-mt-8 bg-[#1e2920] py-20 text-[#f4eddd] sm:py-28 lg:py-36">
       <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-20 lg:px-12">
           <div className="abstract-window relative order-2 aspect-[5/4] overflow-hidden border border-[#e1bd78]/30 shadow-[-12px_12px_0_#4e563c] transition duration-500 hover:-translate-y-1 hover:shadow-[-16px_16px_0_#4e563c] lg:order-1">
-            <p className="absolute bottom-3 left-3 border border-[#f4eddd]/20 bg-[#20231c]/75 px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.13em]">Visual abstracto · no es fotografía</p>
+            <p className="absolute bottom-3 left-3 border border-[#f4eddd]/20 bg-[#131313]/75 px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.13em]">Visual abstracto · no es fotografía</p>
         </div>
         <div className="order-1 lg:order-2">
           <p className="eyebrow-rule text-xs font-bold uppercase tracking-[0.22em] text-[#e1bd78]">02 · Estancia</p>
