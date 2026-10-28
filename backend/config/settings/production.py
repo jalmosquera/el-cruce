@@ -16,5 +16,6 @@ DATABASES = {"default": get_postgresql_database_settings()}
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+JWT_REFRESH_COOKIE_SECURE = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
