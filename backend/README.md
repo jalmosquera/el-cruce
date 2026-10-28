@@ -83,7 +83,8 @@ uv run pytest
 ```
 
 The test configuration collects `tests/`, runs branch coverage for `config`,
-`employees`, `guests`, `identity`, `rooms`, and `menu`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+`employees`, `guests`, `identity`, `rooms`, `menu`, and `reservations`, and
+fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
 
@@ -176,6 +177,28 @@ be an integer greater than zero. `status` is required and must be one of
 ```json
 {"capacity": ["Capacity must be greater than zero."]}
 ```
+
+On update, `capacity` cannot be reduced below the largest `guest_count` among
+the room's occupying reservations (`pending`, `confirmed`, `checked_in`). A
+reduction that would leave an occupying reservation over capacity returns `400`
+with a `capacity` field error whose code is
+`capacity_below_occupying_guest_count`. Terminal reservations (`checked_out`,
+`cancelled`, `no_show`) and their guest counts are excluded from this rule.
+
+The serializer checks this rule before any lock, then the update runs in
+`transaction.atomic()`, locks the room row with `select_for_update()`, and
+rechecks it against the committed reservations. Reservation creation locks the
+same room row before validating capacity and inserting, so a capacity reduction
+cannot race a concurrent reservation and persist an over-capacity stay.
+
+Deleting a room that any reservation still references — even a terminal
+`cancelled` reservation — returns `409 Conflict` instead of a server error:
+
+```json
+{"detail": "This room cannot be deleted because a reservation references it."}
+```
+
+The error code is `room_in_use`.
 
 ## Menu API contract
 
@@ -437,6 +460,238 @@ Validation failures return `400` with field-specific errors. For example:
 }
 ```
 
+Deleting a guest that any reservation still references — even a terminal
+`cancelled` reservation — returns `409 Conflict` instead of a server error:
+
+```json
+{"detail": "This guest cannot be deleted because a reservation references it."}
+```
+
+The error code is `guest_in_use`.
+
 PostgreSQL also enforces a non-blank display name, non-blank document numbers,
 the document-field pairing, and the supported document-type list when
 application validation is bypassed.
+
+## Reservation API contract
+
+All reservation endpoints require a Bearer access token. Only
+server-authoritative `manager` and `administrator` roles may access them;
+anonymous callers receive `401` and users with the `employee` role receive
+`403`. The list response is an unpaginated JSON array ordered by `check_in`
+and then primary key.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET`, `POST` | `/api/reservations/` | List or create reservations. |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/reservations/{id}/` | Manage one reservation. |
+| `GET` | `/api/reservations/availability/` | Find operational rooms without an occupying overlap. |
+
+A reservation exposes only internal operational data:
+
+```json
+{
+  "id": 21,
+  "room": 1,
+  "guest": 7,
+  "check_in": "2026-11-10",
+  "check_out": "2026-11-12",
+  "guest_count": 2,
+  "status": "pending",
+  "internal_notes": "Late arrival requested.",
+  "created_by": 3,
+  "created_at": "2026-10-28T12:00:00Z",
+  "updated_at": "2026-10-28T12:00:00Z"
+}
+```
+
+`id`, `created_by`, `created_at`, and `updated_at` are read-only. `created_by`
+is always the authenticated user who created the reservation and becomes
+`null` if that internal user is later deleted. `room` and `guest` are required
+primary keys to existing resources; both use `PROTECT`, so a room or guest
+cannot be deleted while any reservation references it. `check_in` and
+`check_out` are required ISO 8601 dates (`YYYY-MM-DD`).
+
+`check_out` must be later than `check_in`. For newly created reservations,
+`check_out` must also be today or later in the project's local timezone
+(`Europe/Madrid`). Existing reservations may retain past dates so staff can
+check them out, and updates do not reapply the creation-date rule. The
+database enforces `check_out > check_in`.
+
+`guest_count` is required, must be greater than zero, and must not exceed
+`room.capacity`. Capacity is validated by the model and API because this
+cross-table invariant cannot be expressed as a simple PostgreSQL check
+constraint; it is rechecked after the room row is locked. The database enforces
+a positive `guest_count`.
+
+`internal_notes` is optional, may be blank, and is limited to 2000 characters.
+`status` defaults to `pending` on creation and must be one of the statuses
+below.
+
+### Reservation statuses and transitions
+
+Only `pending`, `confirmed`, and `checked_in` occupy the room. The terminal
+statuses `checked_out`, `cancelled`, and `no_show` never block another
+reservation.
+
+| Current status | Allowed next statuses |
+| --- | --- |
+| `pending` | `confirmed`, `cancelled` |
+| `confirmed` | `checked_in`, `cancelled`, `no_show` |
+| `checked_in` | `checked_out` |
+| `checked_out` | none |
+| `cancelled` | none |
+| `no_show` | none |
+
+Sending the current status again is an accepted no-op. Any other transition is
+rejected with `400` and a `status` field error whose error code is
+`invalid_status_transition`.
+
+### Overlap invariant
+
+PostgreSQL enforces this exclusion constraint:
+
+```sql
+EXCLUDE USING gist (
+  room_id WITH =,
+  daterange(check_in, check_out, '[)') WITH &&
+) WHERE status IN ('pending', 'confirmed', 'checked_in')
+```
+
+The `btree_gist` extension required for the equality operator is created by the
+employees migration; the reservations migration declares that dependency.
+Ranges are half-open `[check_in, check_out)`, so adjacent stays are valid and a
+checkout day may equal another reservation's check-in day. Cancelled,
+checked-out, and no-show rows are outside the constraint predicate and never
+block a room.
+
+Create and update operations run in `transaction.atomic()`, acquire
+`select_for_update()` on the affected room rows before checking overlaps, and
+then save. Updates lock every room the request may touch in ascending
+primary-key order, then lock and re-read the reservation row. When the request
+does not reassign the room, the effective room is resolved from that freshly
+locked row; if a concurrent update already moved the reservation to another
+room, that room is locked too and capacity and overlap are revalidated against
+the fresh state. Date, capacity and status-transition rules are therefore
+revalidated against committed data. Updates write only the fields supplied by
+the request, so a concurrent notes edit cannot revert a status change. A `PATCH`
+that changes `room` checks overlap against the target room with the same
+occupying statuses and half-open range used by the exclusion constraint. This
+serializes competing requests for the same room; the exclusion constraint
+remains the final guarantee under concurrency. An overlap detected by the
+application or by the database returns `400` with:
+
+```json
+{
+  "non_field_errors": [
+    "This room already has an overlapping reservation."
+  ]
+}
+```
+
+The error code for that message is `overlapping_reservation`. Updating an
+existing reservation excludes its own row from the overlap check, so extending
+or editing it does not conflict with itself.
+
+### Concurrent update conflicts
+
+If a concurrent update moves a reservation after the request took its pre-lock
+snapshot, the effective room may only be discovered after the reservation row
+is locked. That late room lock is acquired with `NOWAIT` so the request never
+waits for a room while holding the reservation lock, which would invert the
+lock order used by room moves and risk a PostgreSQL deadlock. When PostgreSQL
+reports a lock conflict (SQLSTATE `40P01` deadlock detected or `55P03` lock not
+available), the API rolls the transaction back and returns `409 Conflict`:
+
+```json
+{
+  "detail": "The reservation was modified concurrently. Retry the request."
+}
+```
+
+The stable error code is `reservation_conflict`. No partial update is persisted;
+the client should retry the request against the committed state. The response
+never exposes PostgreSQL error text or constraint details.
+
+### Availability semantics
+
+`GET /api/reservations/availability/?check_in=YYYY-MM-DD&check_out=YYYY-MM-DD`
+requires an increasing half-open range. A missing or malformed date returns
+`400`; an inverted or empty range returns `400` with a `check_out` error whose
+code is `check_out_not_after_check_in`. An optional `room` query parameter
+filters by room primary key.
+
+The endpoint returns operational rooms only (`room.status = operational`) that
+have no overlapping reservation in an occupying status. Maintenance and
+out-of-service rooms are never returned. Past ranges are accepted so staff can
+consult historical availability.
+
+```json
+{
+  "check_in": "2026-11-10",
+  "check_out": "2026-11-12",
+  "rooms": [
+    {
+      "id": 2,
+      "code": "102",
+      "name": "Double room 102",
+      "capacity": 2,
+      "status": "operational"
+    }
+  ]
+}
+```
+
+### Reservation deletion
+
+`DELETE` is allowed only for non-occupying reservations (`checked_out`,
+`cancelled`, or `no_show`). Attempting to delete a `pending`, `confirmed`, or
+`checked_in` reservation returns `400`:
+
+```json
+{"detail": "Occupying reservations cannot be deleted."}
+```
+
+The error code is `reservation_is_occupying`. Occupying reservations must first
+be transitioned to a terminal status.
+
+### Reservation validation errors
+
+Validation failures use DRF's field-to-list error shape. Over HTTP the JSON
+`detail`/field messages come from two different sources:
+
+- DRF's built-in validator messages are translated by Django's i18n machinery.
+  The project uses `LANGUAGE_CODE = "es-es"`, so a missing field is reported
+  with the Spanish built-in message `"Este campo es requerido."` and code
+  `required`.
+- Messages written by this project are plain English and are not translated by
+  Django, even though the project locale is Spanish. Examples are
+  `"Guest count must be greater than zero."`,
+  `"Guest count exceeds room capacity."`,
+  `"Check-out must be later than check-in."`, and
+  `"This room already has an overlapping reservation."`.
+
+Do not depend on either localized built-in text or custom English text. The
+machine-readable `ErrorDetail.code` is the stable contract. The JSON body
+exposes only the message, not the code, so clients must follow the documented
+message/code pairing or treat unknown messages as generic validation errors.
+
+Domain error codes are stable and independent from those localized or custom
+messages: `check_out_not_after_check_in`, `check_out_in_past`,
+`guest_count_exceeds_capacity`, `invalid_status_transition`,
+`overlapping_reservation`, and `reservation_is_occupying`. A status transition
+that lost a race with a concurrent status change is rejected with the same
+`invalid_status_transition` code. A lock conflict detected while revalidating a
+concurrent update uses `409 Conflict` with the `reservation_conflict` code.
+
+DRF field-level codes also apply:
+
+- A missing `check_in` or `check_out` returns code `required` with DRF's
+  localized Spanish message.
+- A malformed date (for example `not-a-date`) returns code `invalid`.
+- A missing `guest_count` returns code `required`; a non-integer returns
+  `invalid`; a value below `1` returns `min_value` together with the project's
+  untranslated English message `"Guest count must be greater than zero."`,
+  because that field overrides DRF's default message.
+- Invalid choice values, including an unknown `status`, use DRF's
+  `invalid_choice` code.
