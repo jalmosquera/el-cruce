@@ -4,12 +4,14 @@ import { LoginPage } from '../features/auth/LoginPage.jsx'
 import { PrivateRoute } from '../features/auth/PrivateRoute.jsx'
 import { DashboardHome, DashboardPlaceholder, DashboardShell } from '../features/dashboard/DashboardShell.jsx'
 import { PublicLanding } from '../features/public-landing/PublicLanding.jsx'
+import { PublicMenuPage } from '../features/public-menu/PublicMenuPage.jsx'
 
 function App({ authService }) {
   return (
     <AuthProvider authService={authService}>
       <Routes>
         <Route path="/" element={<PublicLanding />} />
+        <Route path="/carta" element={<PublicMenuPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<DashboardShell />}>

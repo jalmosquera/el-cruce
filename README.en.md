@@ -9,19 +9,26 @@ Already integrated into `dev`:
 - Django and Django REST Framework backend configured for PostgreSQL.
 - Identity and authentication API with `login`, `refresh`, `logout`, and `me`. The JWT access token is kept only in client memory; the refresh token is sent in an HttpOnly cookie, and `refresh` and `logout` require CSRF protection, rotation, and revocation.
 - React, Vite, and Tailwind CSS frontend with the public landing page.
+- Rooms backend and API.
+- Multilingual menu backend and API.
+- Employees and shifts backend and API.
+- Guests backend and API for internal management.
+- Authenticated admin dashboard shell.
 - Automated backend and frontend tests, plus independent linting and coverage.
+- Continuous integration workflow.
 - Local Docker Compose environment for frontend, backend, and PostgreSQL.
 
-Open as Pull Requests pending owner review and merge; not available in `dev`:
+Current working branch, pending owner review and merge:
 
-- Rooms backend.
-- Multilingual menu backend.
-- Frontend authentication and admin dashboard shell.
-- Continuous integration workflow.
+- Public menu UI at `/carta`, with language selection and content published from the menu.
 
-The employees and shifts backend lives on the FEAT-06 working branch and is pending owner review and merge.
+Not yet integrated into `dev`:
 
-There are still no reservations, guests, QR codes, or public menu UI. Menu, reservations, guests, rooms, employees, shifts, QR codes, and content are within the project scope, but only the functionality listed above should be treated as available.
+- Reservations.
+- QR codes.
+- Publishing, SEO prerendering, and production configuration strategy.
+
+The project scope includes reservations, QR codes, and manageable content, but only the functionality listed above should be treated as available.
 
 ## Architecture
 
@@ -117,5 +124,6 @@ The configuration enforces at least 80% coverage independently for the backend a
 ## Current limitations
 
 - Production configuration, deployment, and the publishing strategy are pending approval.
-- The only available endpoints are the authentication ones; there are no reservation, guest, or QR code endpoints.
+- Reservations and QR codes are not integrated. The API exposes authentication, rooms, menu, employees and shifts, and guests; there are no reservation or QR code endpoints.
+- The public menu UI lives on the current working branch and is pending review and merge.
 - Do not use real personal data, credentials, or secrets in the repository.
