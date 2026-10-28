@@ -13,11 +13,11 @@ dependencies = [
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 testpaths = ["tests"]
-addopts = "--strict-markers --cov=config --cov=employees --cov=identity --cov-branch --cov-report=term-missing --cov-report=xml"
+addopts = "--strict-markers --cov=config --cov=employees --cov=identity --cov=rooms --cov=menu --cov-branch --cov-report=term-missing --cov-report=xml"
 
 [tool.coverage.run]
 branch = true
-source = ["config", "employees", "identity"]
+source = ["config", "employees", "identity", "rooms", "menu"]
 
 [tool.coverage.report]
 fail_under = 80

@@ -83,7 +83,7 @@ uv run pytest
 ```
 
 The test configuration collects `tests/`, runs branch coverage for `config`,
-`identity`, and `employees`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+`employees`, `identity`, `rooms`, and `menu`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
 
@@ -138,6 +138,202 @@ Without a Bearer access token, `GET /api/auth/me/` returns `401 Unauthorized`:
 
 Access tokens last five minutes. Refresh tokens last seven days, rotate on use,
 and use the SimpleJWT blacklist application for revocation.
+
+## Rooms API contract
+
+The internal rooms API is available only to authenticated users with the
+`administrator` or `manager` role. An `employee` role receives `403 Forbidden`;
+unauthenticated requests receive `401 Unauthorized`. Send the short-lived access
+token as `Authorization: Bearer <access-token>`.
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| `GET` | `/api/rooms/` | List rooms in ascending `code` order. |
+| `POST` | `/api/rooms/` | Create a room. |
+| `GET` | `/api/rooms/{id}/` | Retrieve a room. |
+| `PUT`, `PATCH` | `/api/rooms/{id}/` | Update mutable room fields. |
+| `DELETE` | `/api/rooms/{id}/` | Delete a room. |
+
+Room payloads expose only internal operational data:
+
+```json
+{
+  "id": 1,
+  "code": "101",
+  "name": "Double room 101",
+  "capacity": 2,
+  "status": "operational"
+}
+```
+
+`code` is the unique, stable human-facing room identifier and is accepted only
+when creating a room; attempts to change it return `400` with a `code` field
+error. `name` is required and may not be blank. `capacity` is required and must
+be an integer greater than zero. `status` is required and must be one of
+`operational`, `maintenance`, or `out_of_service`. Invalid input returns
+`400 Bad Request` with field-to-error-list mappings, for example:
+
+```json
+{"capacity": ["Capacity must be greater than zero."]}
+```
+
+## Menu API contract
+
+`GET /api/menu/public/?language={language}` is public and returns only published
+categories containing published dishes. `language` accepts `es` (the default),
+`en`, `fr`, `de`, or `it`; another value returns `400`. For a requested foreign
+language, persisted translations provide `name` and `description`, while
+`spanish_name` and `spanish_description` always preserve the Spanish source.
+When no translation exists, `name` and `description` predictably fall back to
+Spanish and `translation_available` is `false`.
+
+```json
+{
+  "language": "en",
+  "categories": [{
+    "id": 1,
+    "name": "Starters",
+    "spanish_name": "Entrantes",
+    "translation_available": true,
+    "dishes": [{
+      "id": 10,
+      "visible_number": 7,
+      "name": "Spanish omelette",
+      "spanish_name": "Tortilla española",
+      "description": "With potatoes and egg.",
+      "spanish_description": "Con patatas y huevo.",
+      "translation_available": true,
+      "price": "8.50",
+      "allergens": ["eggs"],
+      "is_available": true
+    }]
+  }]
+}
+```
+
+`is_available` is independent from publication: an unavailable published dish
+remains visible. Internal category, dish, category-translation, and
+dish-translation resources are exposed respectively at
+`/api/menu/categories/`, `/api/menu/dishes/`,
+`/api/menu/category-translations/`, and `/api/menu/dish-translations/`.
+They are internal CRUD APIs: `GET` and `POST` use the collection URL, while
+`GET`, `PUT`, `PATCH`, and `DELETE` use `{collection}{id}/`. Every internal
+request requires a Bearer access token whose server-authoritative role is
+`manager` or `administrator`; anonymous requests receive `401` and employees
+receive `403`. Collection `GET` responses are unpaginated JSON arrays. A
+successful create returns `201`, detail reads and updates return `200`, and a
+successful delete returns `204` with no response body.
+
+### Internal categories
+
+`/api/menu/categories/` represents this request and response shape. `id` is
+read-only. `spanish_name` is required and cannot be empty or whitespace only;
+`is_published` defaults to `false` when omitted on creation.
+
+```json
+{
+  "id": 1,
+  "spanish_name": "Entrantes",
+  "is_published": true
+}
+```
+
+Use the same writable fields (`spanish_name`, `is_published`) for `POST`,
+`PUT`, and `PATCH`. Sending `id` does not change the resource identifier.
+
+### Internal dishes
+
+`/api/menu/dishes/` returns and accepts the following representation. `id` is
+read-only; `category` is a category ID. On `POST`, `visible_number` is required,
+positive, and unique across all dishes. After creation it is immutable: a
+`PUT` or `PATCH` that changes it returns `400`.
+
+```json
+{
+  "id": 10,
+  "category": 1,
+  "visible_number": 7,
+  "spanish_name": "Tortilla española",
+  "spanish_description": "Con patatas y huevo.",
+  "price": "8.50",
+  "allergens": ["eggs"],
+  "is_published": true,
+  "is_available": true
+}
+```
+
+`spanish_name` and `price` are required on creation. `spanish_name` cannot be
+empty or whitespace only; `spanish_description` is optional. `price` is a
+non-negative decimal with up to eight digits and two decimal places.
+`allergens` defaults to `[]` and contains unique values from the fixed EU
+vocabulary: `celery`, `cereals_with_gluten`, `crustaceans`, `eggs`, `fish`,
+`lupin`, `milk`, `molluscs`, `mustard`, `nuts`, `peanuts`, `sesame`,
+`soybeans`, and `sulphur_dioxide_and_sulphites`. `is_published` defaults to
+`false` and `is_available` to `true`.
+
+### Internal translations
+
+Category translations use `/api/menu/category-translations/` and dish
+translations use `/api/menu/dish-translations/`. Both endpoints support the
+same CRUD methods and language rule: `language` must be exactly one of `en`,
+`fr`, `de`, or `it`, and each parent resource can have only one translation for
+each language. `id` is read-only.
+
+```json
+{
+  "id": 4,
+  "category": 1,
+  "language": "en",
+  "name": "Starters",
+  "is_manually_reviewed": true
+}
+```
+
+```json
+{
+  "id": 8,
+  "dish": 10,
+  "language": "en",
+  "name": "Spanish omelette",
+  "description": "With potatoes and egg.",
+  "is_manually_reviewed": true
+}
+```
+
+For category translations, `category`, `language`, and `name` are required;
+`is_manually_reviewed` defaults to `false`. For dish translations, `dish`,
+`language`, and `name` are required; `description` is optional and
+`is_manually_reviewed` defaults to `false`. No automated translation writer
+exists in this domain, so manually reviewed content is never overwritten
+automatically.
+
+### Internal validation and errors
+
+Invalid request data returns `400 Bad Request` with DRF's field-to-list error
+shape. Examples include an unsupported language, duplicate translation, blank
+Spanish source name, non-positive or duplicate dish number, invalid price, and
+an attempted dish-number change:
+
+```json
+{
+  "visible_number": ["This field cannot be changed after creation."]
+}
+```
+
+```json
+{
+  "language": ["<localized invalid-choice message>"]
+}
+```
+
+For an unsupported translation language, the validation error is associated
+with the `language` field and has DRF's `invalid_choice` error code. Clients
+must not depend on the localized message text.
+
+An unknown detail ID returns `404 Not Found`. Foreign-key references must point
+to an existing internal resource. Database constraints also protect the Spanish
+source-name and translation-language invariants if data is written outside
+these APIs; dish-number immutability is an API-level update rule.
 
 ## Employee and shift API contract
 
