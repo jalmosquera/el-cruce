@@ -5,6 +5,7 @@ import os
 TEST_ENVIRONMENT = {
     "EL_CRUCE_ENVIRONMENT": "test",
     "DJANGO_SECRET_KEY": "test-only-secret-key-not-for-production",
+    "JWT_SIGNING_KEY": "test-only-jwt-signing-key-not-for-production",
     "POSTGRES_HOST": "127.0.0.1",
     "POSTGRES_PORT": "55439",
     "POSTGRES_DB": "elcruce_infra05_source",

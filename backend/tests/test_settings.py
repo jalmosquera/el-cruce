@@ -1,6 +1,9 @@
 """Meaningful tests for backend configuration and isolated PostgreSQL settings."""
 
 import importlib
+import os
+import subprocess
+import sys
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -51,6 +54,30 @@ def test_get_environment_value_returns_a_safe_configured_value(
         base.get_environment_value("REQUIRED_VALUE", reject_placeholder=True)
         == "configured-value"
     )
+
+
+def test_settings_reject_missing_jwt_signing_key() -> None:
+    environment = {
+        "DJANGO_SECRET_KEY": "test-only-django-secret-not-for-production",
+        "PATH": os.environ["PATH"],
+    }
+
+    result = subprocess.run(
+        [sys.executable, "-c", "import config.settings.base"],
+        capture_output=True,
+        check=False,
+        cwd=base.BASE_DIR,
+        env=environment,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "The JWT_SIGNING_KEY environment variable must be set." in result.stderr
+
+
+def test_simple_jwt_uses_the_dedicated_jwt_signing_key() -> None:
+    assert base.SIMPLE_JWT["SIGNING_KEY"] == os.environ["JWT_SIGNING_KEY"]
+    assert base.SIMPLE_JWT["SIGNING_KEY"] != base.SECRET_KEY
 
 
 @pytest.mark.parametrize(

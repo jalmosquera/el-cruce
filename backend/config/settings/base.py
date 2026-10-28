@@ -124,6 +124,7 @@ def get_postgresql_test_database_name(database_name: str) -> str:
 
 
 SECRET_KEY = get_environment_value("DJANGO_SECRET_KEY", reject_placeholder=True)
+JWT_SIGNING_KEY = get_environment_value("JWT_SIGNING_KEY", reject_placeholder=True)
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -186,6 +187,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
+    "SIGNING_KEY": JWT_SIGNING_KEY,
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,

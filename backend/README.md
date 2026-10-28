@@ -1,16 +1,22 @@
 # Backend operations
 
 The backend reads configuration only from the process environment; it does not
-load `backend/.env`. All environments require `DJANGO_SECRET_KEY` and
-`POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, and
-`POSTGRES_PASSWORD`. Empty and obvious placeholder values are rejected. The port
-must be an integer from 1 through 65535.
+load `backend/.env`. All environments require `DJANGO_SECRET_KEY`, a separate
+`JWT_SIGNING_KEY`, and `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`,
+`POSTGRES_USER`, and `POSTGRES_PASSWORD`. Empty and obvious placeholder values
+are rejected. The port must be an integer from 1 through 65535.
+
+`JWT_SIGNING_KEY` signs access and refresh JWTs and must be a distinct,
+high-entropy secret from `DJANGO_SECRET_KEY`; there is intentionally no fallback
+between them. Rotate it through the environment secret store when token
+invalidation is acceptable, because previously issued JWTs will no longer verify.
 
 Use Fish to export values, replacing every sample value with a real local value:
 
 ```fish
 set -gx EL_CRUCE_ENVIRONMENT development
 set -gx DJANGO_SECRET_KEY "a-unique-non-placeholder-development-secret"
+set -gx JWT_SIGNING_KEY "a-distinct-non-placeholder-jwt-signing-key"
 set -gx DJANGO_DEBUG true
 set -gx DJANGO_ALLOWED_HOSTS "localhost,127.0.0.1"
 set -gx POSTGRES_HOST "127.0.0.1"
@@ -67,6 +73,7 @@ not a development database:
 ```fish
 set -gx EL_CRUCE_ENVIRONMENT test
 set -gx DJANGO_SECRET_KEY "test-only-secret-key-not-for-production"
+set -gx JWT_SIGNING_KEY "test-only-jwt-signing-key-not-for-production"
 set -gx POSTGRES_HOST "127.0.0.1"
 set -gx POSTGRES_PORT 55439
 set -gx POSTGRES_DB "elcruce_infra05_source"

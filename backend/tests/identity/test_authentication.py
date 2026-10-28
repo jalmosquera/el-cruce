@@ -1,8 +1,12 @@
 """PostgreSQL-backed integration tests for browser JWT authentication."""
 
 import pytest
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.backends import TokenBackend
+from rest_framework_simplejwt.exceptions import TokenBackendError
+from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
@@ -54,6 +58,16 @@ def test_login_returns_only_access_token_and_sets_httponly_refresh_cookie(
     assert refresh_cookie["samesite"] == "Lax"
     assert refresh_cookie["path"] == "/api/auth/"
     assert not refresh_cookie["secure"]
+
+
+def test_login_access_token_is_not_signed_with_django_secret_key(user: User) -> None:
+    response = login(APIClient())
+
+    with pytest.raises(TokenBackendError):
+        TokenBackend(
+            algorithm=api_settings.ALGORITHM,
+            signing_key=settings.SECRET_KEY,
+        ).decode(response.data["access"], verify=True)
 
 
 def test_login_rejects_invalid_credentials_without_setting_a_refresh_cookie() -> None:
