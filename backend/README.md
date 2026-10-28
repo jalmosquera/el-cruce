@@ -82,8 +82,8 @@ set -gx POSTGRES_PASSWORD "test-only-password"
 uv run pytest
 ```
 
-The test configuration collects `tests/`, runs branch coverage for `config` and
-`identity`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+The test configuration collects `tests/`, runs branch coverage for `config`,
+`identity`, and `employees`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
 
@@ -138,3 +138,43 @@ Without a Bearer access token, `GET /api/auth/me/` returns `401 Unauthorized`:
 
 Access tokens last five minutes. Refresh tokens last seven days, rotate on use,
 and use the SimpleJWT blacklist application for revocation.
+
+## Employee and shift API contract
+
+All endpoints below require a Bearer access token. Only server-authoritative
+`manager` and `administrator` roles may access them; anonymous callers receive
+`401` and users with the `employee` role receive `403`.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET`, `POST` | `/api/employees/` | List or create minimal employee profiles. |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/employees/{id}/` | Manage one employee profile. |
+| `GET`, `POST` | `/api/shifts/` | List or create shift assignments. |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/shifts/{id}/` | Manage one shift assignment. |
+
+An employee profile only links an existing internal user:
+
+```json
+{"id": 12, "user": 42}
+```
+
+A shift uses timezone-aware ISO 8601 timestamps:
+
+```json
+{
+  "id": 31,
+  "employee": 12,
+  "starts_at": "2026-11-02T09:00:00+01:00",
+  "ends_at": "2026-11-02T17:00:00+01:00"
+}
+```
+
+`starts_at` and `ends_at` require an explicit timezone offset, and `ends_at`
+must be later than `starts_at`. PostgreSQL enforces a non-overlap invariant per
+employee using `[start, end)` semantics: adjacent shifts are allowed and
+intersecting shifts are rejected, including concurrent writes. Validation
+failures return `400`; overlapping shifts return:
+
+```json
+{"non_field_errors": ["This employee already has an overlapping shift."]}
+```
