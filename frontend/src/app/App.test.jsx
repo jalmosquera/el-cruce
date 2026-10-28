@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import App from './App.jsx'
 
 describe('App', () => {
-  it('renders the bootstrap status page at the public root route', () => {
+  it('renders the public landing page at the public root route', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
@@ -12,7 +12,7 @@ describe('App', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: 'Frontend en preparación', level: 1 }),
+      screen.getByRole('heading', { name: 'Un lugar para encontrarse.', level: 1 }),
     ).toBeTruthy()
   })
 })
