@@ -239,5 +239,6 @@ def test_root_url_configuration_registers_approved_domain_routes() -> None:
         "api/guests/",
         "api/rooms/",
         "api/menu/",
+        "api/reservations/",
         "api/",
     ]
