@@ -3,8 +3,16 @@ import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useAuthSession } from '../auth/useAuthSession.js'
 
 const NAVIGATION_BY_ROLE = {
-  administrator: [{ to: '/dashboard', label: 'Resumen', end: true }, { to: '/dashboard/administracion', label: 'Administración' }],
-  manager: [{ to: '/dashboard', label: 'Resumen', end: true }, { to: '/dashboard/operaciones', label: 'Operaciones' }],
+  administrator: [
+    { to: '/dashboard', label: 'Resumen', end: true },
+    { to: '/dashboard/administracion', label: 'Administración' },
+    { to: '/dashboard/habitaciones', label: 'Habitaciones' },
+  ],
+  manager: [
+    { to: '/dashboard', label: 'Resumen', end: true },
+    { to: '/dashboard/operaciones', label: 'Operaciones' },
+    { to: '/dashboard/habitaciones', label: 'Habitaciones' },
+  ],
   employee: [{ to: '/dashboard', label: 'Resumen', end: true }, { to: '/dashboard/mi-jornada', label: 'Mi jornada' }],
 }
 
