@@ -83,7 +83,7 @@ uv run pytest
 ```
 
 The test configuration collects `tests/`, runs branch coverage for `config` and
-`identity`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+`identity`, and `rooms`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
 
@@ -138,6 +138,44 @@ Without a Bearer access token, `GET /api/auth/me/` returns `401 Unauthorized`:
 
 Access tokens last five minutes. Refresh tokens last seven days, rotate on use,
 and use the SimpleJWT blacklist application for revocation.
+
+## Rooms API contract
+
+The internal rooms API is available only to authenticated users with the
+`administrator` or `manager` role. An `employee` role receives `403 Forbidden`;
+unauthenticated requests receive `401 Unauthorized`. Send the short-lived access
+token as `Authorization: Bearer <access-token>`.
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| `GET` | `/api/rooms/` | List rooms in ascending `code` order. |
+| `POST` | `/api/rooms/` | Create a room. |
+| `GET` | `/api/rooms/{id}/` | Retrieve a room. |
+| `PUT`, `PATCH` | `/api/rooms/{id}/` | Update mutable room fields. |
+| `DELETE` | `/api/rooms/{id}/` | Delete a room. |
+
+Room payloads expose only internal operational data:
+
+```json
+{
+  "id": 1,
+  "code": "101",
+  "name": "Double room 101",
+  "capacity": 2,
+  "status": "operational"
+}
+```
+
+`code` is the unique, stable human-facing room identifier and is accepted only
+when creating a room; attempts to change it return `400` with a `code` field
+error. `name` is required and may not be blank. `capacity` is required and must
+be an integer greater than zero. `status` is required and must be one of
+`operational`, `maintenance`, or `out_of_service`. Invalid input returns
+`400 Bad Request` with field-to-error-list mappings, for example:
+
+```json
+{"capacity": ["Capacity must be greater than zero."]}
+```
 
 ## Menu API contract
 
