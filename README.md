@@ -2,45 +2,112 @@
 
 # El Cruce
 
-## Entorno de desarrollo con Docker Compose
+Base de desarrollo para una propuesta de plataforma interna de gestión de restaurante y alojamiento. El Cruce no es un sistema oficial del establecimiento, no ha sido encargado y no está desplegado en producción.
 
-El entorno local de contenedores tiene exactamente tres servicios: `frontend`,
-`backend` y `db` (PostgreSQL). PostgreSQL queda disponible solamente en la red
-interna de Compose. El frontend y el backend se publican únicamente en el host
-local:
+## Estado actual
 
-- Frontend: <http://localhost:9000>
-- Backend: <http://localhost:8000>
+La fundación técnica está implementada:
 
-### Inicio
+- Backend Django y Django REST Framework configurado para PostgreSQL.
+- Frontend React, Vite y Tailwind CSS con una página de estado inicial.
+- Entorno local con Docker Compose para frontend, backend y PostgreSQL.
+- Configuración de linting y cobertura independiente para backend y frontend.
 
-```fish
-cp .env.example .env
-# Editá .env y reemplazá ambos secretos de ejemplo.
-docker compose up --build
+No hay dominios de negocio, rutas de API ni flujos operativos implementados todavía. Las áreas de menú, reservas, huéspedes, habitaciones, empleados, turnos, códigos QR, contenido y autenticación forman parte del alcance del proyecto, pero no deben considerarse funcionalidad disponible.
+
+## Arquitectura
+
+El repositorio sigue un monolito modular: el backend centralizará los dominios de negocio y su API, PostgreSQL persistirá sus datos, y el frontend consumirá la API bajo `/api` mediante el proxy de Vite. La composición local mantiene tres servicios:
+
+- `frontend`: Vite en <http://localhost:9000>.
+- `backend`: servidor de desarrollo de Django en <http://localhost:8000>.
+- `db`: PostgreSQL, accesible sólo desde la red interna de Compose.
+
+La organización actual es:
+
+```text
+backend/   Django, configuración y pruebas
+frontend/  React/Vite, estilos y pruebas
+docs/      Documentación técnica
+compose.yaml
 ```
 
-Compose espera el healthcheck de PostgreSQL antes de iniciar el backend, y el
-healthcheck del backend antes de iniciar el frontend. Los datos de la base, el
-entorno virtual del backend y las dependencias del frontend usan volúmenes con
-nombre.
+Los directorios `docs/architecture/`, `docs/requirements/` y `docs/decisions/` están reservados para arquitectura, requisitos aprobados y decisiones registradas, respectivamente. Aún no contienen documentos publicados.
 
-### Detención
+## Requisitos locales
+
+Elegí uno de estos flujos:
+
+- Docker Desktop con Docker Compose para ejecutar el entorno completo.
+- Para la vista previa directa en macOS: Python 3.14, `uv`, Node.js 24, npm y una instancia local de PostgreSQL.
+
+## Desarrollo con Docker Compose
+
+1. Creá el archivo de variables de entorno a partir del ejemplo y reemplazá los valores de ejemplo por secretos locales únicos.
+
+   ```fish
+   cp .env.example .env
+   ```
+
+2. Iniciá los servicios.
+
+   ```fish
+   docker compose up --build
+   ```
+
+Compose espera el healthcheck de PostgreSQL antes de iniciar el backend y el del backend antes de iniciar el frontend. Los datos de PostgreSQL, el entorno virtual del backend y las dependencias del frontend se conservan en volúmenes con nombre.
+
+Para detener el entorno:
 
 ```fish
 docker compose down
 ```
 
-`docker compose down` conserva los volúmenes con nombre y los datos de
-PostgreSQL. No ejecutes `docker compose down --volumes` sin autorización
-explícita para eliminar todos los datos locales de la base.
+`docker compose down` conserva esos volúmenes. No ejecutes `docker compose down --volumes` sin autorización explícita: elimina todos los datos locales de PostgreSQL.
 
-### Vista previa directa en macOS
+## Vista previa directa en macOS
 
-El uso de contenedores es opcional. Los flujos actuales de vista previa directa
-en macOS siguen disponibles y Compose no los detiene ni los modifica. Consultá
-la configuración del backend en [`backend/README.md`](backend/README.md) y,
-después, ejecutá el frontend desde `frontend/` con `npm run dev`.
+El backend lee exclusivamente variables de entorno del proceso y requiere una base PostgreSQL disponible. Configurá las variables obligatorias en Fish según [`backend/README.md`](backend/README.md), donde también se describe el aislamiento de la base de pruebas.
 
-Esta configuración es únicamente para desarrollo. Usa el servidor de desarrollo
-de Django y el de Vite; ninguno es una estrategia de publicación de producción.
+En una terminal, instalá las dependencias del backend e iniciá Django:
+
+```fish
+cd backend
+uv sync --frozen
+uv run python manage.py runserver
+```
+
+En otra terminal, instalá las dependencias del frontend e iniciá Vite:
+
+```fish
+cd frontend
+npm ci
+npm run dev
+```
+
+Vite se publica en `127.0.0.1:9000` y reenvía `/api` al backend en `127.0.0.1:8000` por defecto. Estos servidores son exclusivamente para desarrollo; no constituyen una estrategia de publicación.
+
+## Calidad
+
+Ejecutá los comandos desde el directorio indicado. Las pruebas de backend necesitan PostgreSQL y crean una base aislada llamada `test_<POSTGRES_DB>`; usá una instancia descartable y credenciales que no sean de producción.
+
+```fish
+cd backend
+uv run --locked ruff check .
+uv run pytest
+```
+
+```fish
+cd frontend
+npm run lint
+npm run test:run
+npm run coverage
+```
+
+La configuración exige como mínimo 80% de cobertura de forma independiente para backend y frontend. Consultá [`docs/development.md`](docs/development.md) para los comandos de lint y [`backend/README.md`](backend/README.md) para la preparación segura de pruebas del backend.
+
+## Limitaciones actuales
+
+- La configuración de producción, el despliegue y la estrategia de publicación siguen pendientes de aprobación.
+- No hay endpoints de dominio registrados en el backend.
+- No se debe usar información personal real, credenciales reales ni secretos en el repositorio.
