@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -14,8 +14,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .cookies import clear_refresh_cookie, set_refresh_cookie
-from .permissions import IsInternalUser
-from .serializers import CurrentUserSerializer
+from .models import User
+from .permissions import IsInternalUser, IsManagerOrAdministrator
+from .serializers import CurrentUserSerializer, InternalUserDirectorySerializer
 
 
 def get_refresh_token_from_cookie(request) -> str:
@@ -90,3 +91,12 @@ class CurrentUserView(APIView):
 
     def get(self, request) -> Response:
         return Response(CurrentUserSerializer(request.user).data)
+
+
+class InternalUserDirectoryView(generics.ListAPIView):
+    """List minimal internal user data for administrative resource selection."""
+
+    queryset = User.objects.order_by("username", "pk")
+    serializer_class = InternalUserDirectorySerializer
+    permission_classes = [IsManagerOrAdministrator]
+    pagination_class = None

@@ -12,3 +12,12 @@ class CurrentUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "username", "role")
         read_only_fields = fields
+
+
+class InternalUserDirectorySerializer(serializers.ModelSerializer):
+    """Expose the minimum safe representation for internal user selection."""
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "role")
+        read_only_fields = fields

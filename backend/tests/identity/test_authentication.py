@@ -18,6 +18,7 @@ LOGIN_URL = "/api/auth/login/"
 REFRESH_URL = "/api/auth/refresh/"
 LOGOUT_URL = "/api/auth/logout/"
 CURRENT_USER_URL = "/api/auth/me/"
+INTERNAL_USER_DIRECTORY_URL = "/api/identity/users/"
 PASSWORD = "correct-horse-battery-staple"
 
 
@@ -156,3 +157,60 @@ def test_current_user_uses_the_server_authoritative_role(
 
     assert response.status_code == 200
     assert response.data == {"id": user.pk, "username": role, "role": role}
+
+
+@pytest.mark.parametrize("role", [UserRole.MANAGER, UserRole.ADMINISTRATOR])
+def test_manager_and_administrator_can_list_minimal_internal_user_directory(
+    role: str,
+) -> None:
+    authenticated_user = User.objects.create_user(
+        username=f"directory-{role}", password=PASSWORD, role=role
+    )
+    employee = User.objects.create_user(
+        username="employee-user", password=PASSWORD, role=UserRole.EMPLOYEE
+    )
+    manager = User.objects.create_user(
+        username="manager-user", password=PASSWORD, role=UserRole.MANAGER
+    )
+    client = APIClient()
+    client.force_authenticate(authenticated_user)
+
+    response = client.get(INTERNAL_USER_DIRECTORY_URL)
+
+    assert response.status_code == 200
+    assert response.data == [
+        {"id": authenticated_user.pk, "username": f"directory-{role}", "role": role},
+        {"id": employee.pk, "username": "employee-user", "role": UserRole.EMPLOYEE},
+        {"id": manager.pk, "username": "manager-user", "role": UserRole.MANAGER},
+    ]
+    assert all(set(user) == {"id", "username", "role"} for user in response.data)
+
+
+def test_internal_user_directory_is_read_only() -> None:
+    manager = User.objects.create_user(
+        username="manager-user", password=PASSWORD, role=UserRole.MANAGER
+    )
+    client = APIClient()
+    client.force_authenticate(manager)
+
+    response = client.post(INTERNAL_USER_DIRECTORY_URL, {}, format="json")
+
+    assert response.status_code == 405
+
+
+def test_employee_is_forbidden_from_listing_internal_user_directory() -> None:
+    employee = User.objects.create_user(
+        username="employee-user", password=PASSWORD, role=UserRole.EMPLOYEE
+    )
+    client = APIClient()
+    client.force_authenticate(employee)
+
+    response = client.get(INTERNAL_USER_DIRECTORY_URL)
+
+    assert response.status_code == 403
+
+
+def test_anonymous_user_cannot_list_internal_user_directory() -> None:
+    response = APIClient().get(INTERNAL_USER_DIRECTORY_URL)
+
+    assert response.status_code == 401

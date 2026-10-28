@@ -110,6 +110,16 @@ describe('authentication flow', () => {
     expect(screen.queryByRole('link', { name: 'Administración' })).toBeNull()
   })
 
+  it('shows the operations navigation link to administrators', async () => {
+    const authService = createAuthService({
+      refresh: vi.fn().mockResolvedValue({ access: 'renewed-access-token' }),
+      getCurrentUser: vi.fn().mockResolvedValue({ id: 4, username: 'marta', role: 'administrator' }),
+    })
+    renderApp('/dashboard', authService)
+
+    expect(await screen.findByRole('link', { name: 'Operaciones' })).toBeTruthy()
+  })
+
   it('retains the active session and announces an error when logout fails', async () => {
     const authService = createAuthService({
       refresh: vi.fn().mockResolvedValue({ access: 'renewed-access-token' }),

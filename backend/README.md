@@ -139,6 +139,26 @@ Without a Bearer access token, `GET /api/auth/me/` returns `401 Unauthorized`:
 Access tokens last five minutes. Refresh tokens last seven days, rotate on use,
 and use the SimpleJWT blacklist application for revocation.
 
+## Internal user directory API contract
+
+`GET /api/identity/users/` returns an unpaginated JSON array of internal users
+for administrative selection controls. It requires a Bearer access token whose
+server-authoritative role is `manager` or `administrator`; anonymous callers
+receive `401` and users with the `employee` role receive `403`. Results are
+ordered by ascending `username`, then `id`, and each entry exposes only:
+
+```json
+{"id": 42, "username": "maria", "role": "employee"}
+```
+
+The directory deliberately includes all internal roles. Employee profiles
+currently use a foreign key serializer field with `User.objects.all()` and have
+no model or serializer constraint requiring the linked user to have the
+`employee` role. Filtering this directory to employees would therefore create a
+frontend/API restriction that conflicts with the current employee-profile
+contract. Restricting profile links to employee-role users requires a separately
+approved domain-rule change.
+
 ## Rooms API contract
 
 The internal rooms API is available only to authenticated users with the
