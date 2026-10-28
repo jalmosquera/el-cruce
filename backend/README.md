@@ -82,8 +82,8 @@ set -gx POSTGRES_PASSWORD "test-only-password"
 uv run pytest
 ```
 
-The test configuration collects `tests/`, runs branch coverage for `config` and
-`identity`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+The test configuration collects `tests/`, runs branch coverage for `config`,
+`guests`, and `identity`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
 
@@ -124,9 +124,25 @@ cookie is absent, expired, or malformed.
 
 `GET /api/auth/me/` requires a Bearer access token and returns the authenticated
 internal user's server-authoritative `id`, `username`, and `role`. Supported
-roles are `administrator`, `manager`, and `employee`; all may access only this
-self endpoint. The detailed role-to-resource permission matrix remains outside
-FEAT-02 and requires approval before domain endpoints are added.
+roles are `administrator`, `manager`, and `employee`.
+
+The backend enforces the following role-to-resource matrix. `employee` accounts
+may authenticate but receive `403 Forbidden` from internal management APIs;
+anonymous requests to protected endpoints receive `401 Unauthorized`.
+
+| Endpoint contract | Anonymous | `employee` | `manager` | `administrator` |
+| --- | --- | --- | --- | --- |
+| `POST /api/auth/login/`, `/api/auth/refresh/`, `/api/auth/logout/` | Allowed; refresh and logout also require the refresh cookie and CSRF token. | Allowed | Allowed | Allowed |
+| `GET /api/auth/me/` | `401` | Allowed | Allowed | Allowed |
+| `GET /api/menu/public/` | Allowed | Allowed | Allowed | Allowed |
+| `/api/menu/categories/`, `/api/menu/dishes/`, `/api/menu/category-translations/`, `/api/menu/dish-translations/` | `401` | `403` | Allowed | Allowed |
+| `/api/rooms/` and `/api/rooms/{id}/` | `401` | `403` | Allowed | Allowed |
+| `/api/employees/`, `/api/employees/{id}/`, `/api/shifts/`, `/api/shifts/{id}/` | `401` | `403` | Allowed | Allowed |
+| `/api/guests/` and `/api/guests/{id}/` | `401` | `403` | Allowed | Allowed |
+
+Detailed request and response contracts are documented per domain in the
+backend repository. Authorization is always enforced on the backend and never
+inferred from frontend role checks.
 
 Without a Bearer access token, `GET /api/auth/me/` returns `401 Unauthorized`:
 
@@ -138,3 +154,69 @@ Without a Bearer access token, `GET /api/auth/me/` returns `401 Unauthorized`:
 
 Access tokens last five minutes. Refresh tokens last seven days, rotate on use,
 and use the SimpleJWT blacklist application for revocation.
+
+## Guest API contract
+
+All endpoints below require a Bearer access token. Only server-authoritative
+`manager` and `administrator` roles may access them; anonymous callers receive
+`401` and users with the `employee` role receive `403`.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET`, `POST` | `/api/guests/` | List or create internal guest records. |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/guests/{id}/` | Manage one internal guest record. |
+
+The list response is a JSON array without pagination. Every record exposes only
+the minimized operational representation:
+
+```json
+{
+  "id": 7,
+  "display_name": "Ana María López",
+  "email": "ana.lopez@example.com",
+  "phone": "+34600123456",
+  "document_type": "dni",
+  "document_number": "12345678Z",
+  "internal_notes": "Late arrival requested.",
+  "created_at": "2026-10-28T12:00:00Z",
+  "updated_at": "2026-10-28T12:00:00Z"
+}
+```
+
+`id`, `created_at`, and `updated_at` are read-only. The API accepts only the
+fields listed above. Unknown fields, including identity-document images,
+biometric data, official traveler reporting fields, and automated-messaging data,
+are silently ignored: they are not rejected, stored, or returned.
+
+Request validation normalizes data before persistence:
+
+- `display_name` is required, has insignificant whitespace collapsed, and the
+  normalized value may contain at most 150 characters.
+- `email` is optional, trimmed, lowercased, and validated as an email address
+  with at most 254 characters. Blank values are stored as `null`.
+- `phone` is optional, trimmed, and stripped of spaces, dots, hyphens,
+  parentheses, and slashes. It keeps one optional leading `+` and must contain
+  between 6 and 15 ASCII digits. Blank values are stored as `null`.
+- `document_type` is optional and accepts `dni`, `nie`, `passport`, or `other`
+  case-insensitively. `document_number` is optional, uppercased, and stripped of
+  spaces and hyphens. Both document fields must be provided together or omitted
+  together.
+- DNI and NIE numbers require a valid Spanish control letter. Passport numbers
+  require 5 to 20 letters or digits. `other` document numbers require 3 to 32
+  letters or digits.
+- `internal_notes` is optional, trimmed, and the normalized value is limited to
+  2000 characters.
+
+Validation failures return `400` with field-specific errors. For example:
+
+```json
+{
+  "document_type": [
+    "Document type is required when a document number is provided."
+  ]
+}
+```
+
+PostgreSQL also enforces a non-blank display name, non-blank document numbers,
+the document-field pairing, and the supported document-type list when
+application validation is bypassed.

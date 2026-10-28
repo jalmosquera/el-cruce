@@ -231,8 +231,9 @@ def test_production_settings_enable_cookie_security(
     assert production.JWT_REFRESH_COOKIE_SECURE is True
 
 
-def test_root_url_configuration_registers_only_the_approved_identity_routes() -> None:
+def test_root_url_configuration_registers_the_approved_domain_routes() -> None:
     from config.urls import urlpatterns
 
-    assert len(urlpatterns) == 1
+    assert len(urlpatterns) == 2
     assert str(urlpatterns[0].pattern) == "api/auth/"
+    assert str(urlpatterns[1].pattern) == "api/guests/"
