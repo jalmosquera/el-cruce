@@ -83,7 +83,7 @@ uv run pytest
 ```
 
 The test configuration collects `tests/`, runs branch coverage for `config`,
-`employees`, `identity`, `rooms`, and `menu`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
+`employees`, `guests`, `identity`, `rooms`, and `menu`, and fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
 
@@ -374,3 +374,69 @@ failures return `400`; overlapping shifts return:
 ```json
 {"non_field_errors": ["This employee already has an overlapping shift."]}
 ```
+
+## Guest API contract
+
+All endpoints below require a Bearer access token. Only server-authoritative
+`manager` and `administrator` roles may access them; anonymous callers receive
+`401` and users with the `employee` role receive `403`.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET`, `POST` | `/api/guests/` | List or create internal guest records. |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/guests/{id}/` | Manage one internal guest record. |
+
+The list response is a JSON array without pagination. Every record exposes only
+the minimized operational representation:
+
+```json
+{
+  "id": 7,
+  "display_name": "Ana María López",
+  "email": "ana.lopez@example.com",
+  "phone": "+34600123456",
+  "document_type": "dni",
+  "document_number": "12345678Z",
+  "internal_notes": "Late arrival requested.",
+  "created_at": "2026-10-28T12:00:00Z",
+  "updated_at": "2026-10-28T12:00:00Z"
+}
+```
+
+`id`, `created_at`, and `updated_at` are read-only. The API accepts only the
+fields listed above. Unknown fields, including identity-document images,
+biometric data, official traveler reporting fields, and automated-messaging data,
+are silently ignored: they are not rejected, stored, or returned.
+
+Request validation normalizes data before persistence:
+
+- `display_name` is required, has insignificant whitespace collapsed, and the
+  normalized value may contain at most 150 characters.
+- `email` is optional, trimmed, lowercased, and validated as an email address
+  with at most 254 characters. Blank values are stored as `null`.
+- `phone` is optional, trimmed, and stripped of spaces, dots, hyphens,
+  parentheses, and slashes. It keeps one optional leading `+` and must contain
+  between 6 and 15 ASCII digits. Blank values are stored as `null`.
+- `document_type` is optional and accepts `dni`, `nie`, `passport`, or `other`
+  case-insensitively. `document_number` is optional, uppercased, and stripped of
+  spaces and hyphens. Both document fields must be provided together or omitted
+  together.
+- DNI and NIE numbers require a valid Spanish control letter. Passport numbers
+  require 5 to 20 letters or digits. `other` document numbers require 3 to 32
+  letters or digits.
+- `internal_notes` is optional, trimmed, and the normalized value is limited to
+  2000 characters.
+
+Validation failures return `400` with field-specific errors. For example:
+
+```json
+{
+  "document_type": [
+    "Document type is required when a document number is provided."
+  ]
+}
+```
+
+PostgreSQL also enforces a non-blank display name, non-blank document numbers,
+the document-field pairing, and the supported document-type list when
+application validation is bypassed.

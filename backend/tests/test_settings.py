@@ -236,6 +236,7 @@ def test_root_url_configuration_registers_approved_domain_routes() -> None:
 
     assert [str(pattern.pattern) for pattern in urlpatterns] == [
         "api/auth/",
+        "api/guests/",
         "api/rooms/",
         "api/menu/",
         "api/",
