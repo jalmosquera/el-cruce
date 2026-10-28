@@ -7,7 +7,7 @@ describe('App', () => {
   it('renders the public landing page at the public root route', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
-        <App />
+        <App authService={{ refresh: () => Promise.reject(new Error('No session')) }} />
       </MemoryRouter>,
     )
 

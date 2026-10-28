@@ -4,14 +4,24 @@ Development foundation for a proposed internal restaurant and accommodation mana
 
 ## Current status
 
-The technical foundation is implemented:
+Already integrated into `dev`:
 
 - Django and Django REST Framework backend configured for PostgreSQL.
-- React, Vite, and Tailwind CSS frontend with an initial status page.
+- Identity and authentication API with `login`, `refresh`, `logout`, and `me`. The JWT access token is kept only in client memory; the refresh token is sent in an HttpOnly cookie, and `refresh` and `logout` require CSRF protection, rotation, and revocation.
+- React, Vite, and Tailwind CSS frontend with the public landing page.
+- Automated backend and frontend tests, plus independent linting and coverage.
 - Local Docker Compose environment for frontend, backend, and PostgreSQL.
-- Separate linting and coverage configuration for the backend and frontend.
 
-No business domains, API routes, or operational workflows have been implemented yet. Menu, reservations, guests, rooms, employees, shifts, QR codes, content, and authentication are within the project scope, but must not be treated as available functionality.
+Open as Pull Requests pending owner review and merge; not available in `dev`:
+
+- Rooms backend.
+- Multilingual menu backend.
+- Frontend authentication and admin dashboard shell.
+- Continuous integration workflow.
+
+The employees and shifts backend lives on the FEAT-06 working branch and is pending owner review and merge.
+
+There are still no reservations, guests, QR codes, or public menu UI. Menu, reservations, guests, rooms, employees, shifts, QR codes, and content are within the project scope, but only the functionality listed above should be treated as available.
 
 ## Architecture
 
@@ -107,5 +117,5 @@ The configuration enforces at least 80% coverage independently for the backend a
 ## Current limitations
 
 - Production configuration, deployment, and the publishing strategy are pending approval.
-- No domain endpoints are registered in the backend.
+- The only available endpoints are the authentication ones; there are no reservation, guest, or QR code endpoints.
 - Do not use real personal data, credentials, or secrets in the repository.
