@@ -6,14 +6,24 @@ Base de desarrollo para una propuesta de plataforma interna de gestión de resta
 
 ## Estado actual
 
-La fundación técnica está implementada:
+Ya integrado en `dev`:
 
 - Backend Django y Django REST Framework configurado para PostgreSQL.
-- Frontend React, Vite y Tailwind CSS con una página de estado inicial.
+- API de identidad y autenticación con `login`, `refresh`, `logout` y `me`. El token de acceso JWT se conserva sólo en memoria del cliente; el refresh token viaja en una cookie HttpOnly, y `refresh` y `logout` exigen protección CSRF, rotación y revocación.
+- Frontend React, Vite y Tailwind CSS con la landing pública.
+- Pruebas automatizadas de backend y frontend, más linting y cobertura independiente.
 - Entorno local con Docker Compose para frontend, backend y PostgreSQL.
-- Configuración de linting y cobertura independiente para backend y frontend.
 
-No hay dominios de negocio, rutas de API ni flujos operativos implementados todavía. Las áreas de menú, reservas, huéspedes, habitaciones, empleados, turnos, códigos QR, contenido y autenticación forman parte del alcance del proyecto, pero no deben considerarse funcionalidad disponible.
+Abierto como Pull Request, pendiente de revisión y merge del propietario; no disponible en `dev`:
+
+- Backend de habitaciones.
+- Backend del menú multilingüe.
+- Frontend de autenticación y shell del panel de administración.
+- Workflow de integración continua.
+
+El backend de empleados y turnos corresponde a la rama de trabajo de FEAT-06 y está pendiente de revisión y merge del propietario.
+
+No existen todavía reservas, huéspedes, códigos QR ni interfaz pública del menú. Menú, reservas, huéspedes, habitaciones, empleados, turnos, códigos QR y contenido forman parte del alcance del proyecto, pero sólo la funcionalidad enumerada arriba debe considerarse disponible.
 
 ## Arquitectura
 
@@ -109,5 +119,5 @@ La configuración exige como mínimo 80% de cobertura de forma independiente par
 ## Limitaciones actuales
 
 - La configuración de producción, el despliegue y la estrategia de publicación siguen pendientes de aprobación.
-- No hay endpoints de dominio registrados en el backend.
+- Los únicos endpoints disponibles son los de autenticación; no existen endpoints de reservas, huéspedes ni códigos QR.
 - No se debe usar información personal real, credenciales reales ni secretos en el repositorio.
