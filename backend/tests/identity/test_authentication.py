@@ -1,5 +1,7 @@
 """PostgreSQL-backed integration tests for browser JWT authentication."""
 
+from datetime import timedelta
+
 import pytest
 from django.conf import settings
 from django.db import IntegrityError, transaction
@@ -36,6 +38,17 @@ def login(client: APIClient, username: str = "manager"):
 
 def csrf_headers(response) -> dict[str, str]:
     return {"HTTP_X_CSRFTOKEN": response.cookies["csrftoken"].value}
+
+
+def expired_access_token(user: User) -> str:
+    token = AccessToken.for_user(user)
+    token.set_exp(lifetime=timedelta(minutes=-1))
+    return str(token)
+
+
+def with_expired_bearer_token(client: APIClient, user: User) -> APIClient:
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {expired_access_token(user)}")
+    return client
 
 
 def test_user_role_database_constraint_rejects_unknown_roles(user: User) -> None:
@@ -78,6 +91,29 @@ def test_login_rejects_invalid_credentials_without_setting_a_refresh_cookie() ->
     assert "elcruce_refresh" not in response.cookies
 
 
+def test_login_ignores_an_expired_bearer_header(user: User) -> None:
+    client = with_expired_bearer_token(APIClient(), user)
+
+    response = login(client)
+
+    assert response.status_code == 200
+    assert set(response.data) == {"access"}
+    assert AccessToken(response.data["access"])["user_id"] == str(user.pk)
+    assert response.cookies["elcruce_refresh"].value
+
+
+def test_login_still_rejects_invalid_credentials_with_an_expired_bearer_header(
+    user: User,
+) -> None:
+    client = with_expired_bearer_token(APIClient(), user)
+
+    response = login(client, username="unknown")
+
+    assert response.status_code == 401
+    assert response.data == {"detail": "No active account found with the given credentials"}
+    assert "elcruce_refresh" not in response.cookies
+
+
 def test_refresh_requires_a_csrf_token_for_the_cookie_authenticated_request(
     user: User,
 ) -> None:
@@ -109,6 +145,62 @@ def test_refresh_rotates_cookie_and_blacklists_the_submitted_token(user: User) -
         REFRESH_URL, format="json", **csrf_headers(login_response)
     )
     assert replay_response.status_code == 401
+
+
+def test_refresh_ignores_an_expired_bearer_header_and_rotates_cookie(
+    user: User,
+) -> None:
+    client = APIClient(enforce_csrf_checks=True)
+    login_response = login(client)
+    old_refresh = login_response.cookies["elcruce_refresh"].value
+    old_jti = RefreshToken(old_refresh)["jti"]
+    with_expired_bearer_token(client, user)
+
+    response = client.post(REFRESH_URL, format="json", **csrf_headers(login_response))
+
+    assert response.status_code == 200
+    assert set(response.data) == {"access"}
+    assert response.cookies["elcruce_refresh"].value != old_refresh
+    assert BlacklistedToken.objects.filter(token__jti=old_jti).exists()
+
+
+def test_refresh_still_rejects_an_invalid_cookie_with_an_expired_bearer_header(
+    user: User,
+) -> None:
+    client = APIClient(enforce_csrf_checks=True)
+    login_response = login(client)
+    with_expired_bearer_token(client, user)
+    client.cookies["elcruce_refresh"] = "not-a-jwt"
+
+    response = client.post(REFRESH_URL, format="json", **csrf_headers(login_response))
+
+    assert response.status_code == 401
+    assert response.data["code"] == "token_not_valid"
+    assert "elcruce_refresh" not in response.cookies
+
+
+def test_refresh_still_requires_a_cookie_with_an_expired_bearer_header(
+    user: User,
+) -> None:
+    client = APIClient(enforce_csrf_checks=True)
+    login_response = login(client)
+    with_expired_bearer_token(client, user)
+    client.cookies.pop("elcruce_refresh")
+
+    response = client.post(REFRESH_URL, format="json", **csrf_headers(login_response))
+
+    assert response.status_code == 400
+    assert response.data == {"refresh": ["Refresh token cookie is required."]}
+
+
+def test_refresh_still_requires_csrf_with_an_expired_bearer_header(user: User) -> None:
+    client = APIClient(enforce_csrf_checks=True)
+    login(client)
+    with_expired_bearer_token(client, user)
+
+    response = client.post(REFRESH_URL, format="json")
+
+    assert response.status_code == 403
 
 
 def test_logout_requires_csrf_and_revokes_then_clears_refresh_cookie(user: User) -> None:
