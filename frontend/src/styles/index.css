@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+@theme {
+  --color-cruce-ink: #131313;
+  --color-cruce-panel: #201f1c;
+  --color-cruce-panel-muted: #302e29;
+  --color-cruce-ivory: #f4eddd;
+  --color-cruce-paper: #fffaf0;
+  --color-cruce-muted: #6d665b;
+  --color-cruce-line: #d7cdbb;
+  --color-cruce-amber: #d6b477;
+  --color-cruce-amber-dark: #765820;
+  /* Focus contrast: #997523 is 3.66:1 against ivory and >=3.18:1 on dark dashboard surfaces. */
+  --color-cruce-focus: #997523;
+  --color-cruce-terracotta: #9a4c35;
+  --color-cruce-danger: #8b3026;
+  --color-cruce-danger-soft: #f8e2d7;
+  --color-cruce-success: #315b4b;
+  --color-cruce-success-soft: #dce9df;
+}
+
 :root {
   color-scheme: dark;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
