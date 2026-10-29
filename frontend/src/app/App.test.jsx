@@ -40,6 +40,17 @@ function renderApp(initialEntry, authService) {
   )
 }
 
+vi.mock('../features/public-menu/menuApi.js', async (importOriginal) => {
+  const actual = await importOriginal()
+
+  return {
+    ...actual,
+    fetchPublicMenu: vi.fn(() => Promise.resolve({ language: 'es', categories: [] })),
+  }
+})
+
+const authService = { refresh: () => Promise.reject(new Error('No session')) }
+
 describe('App', () => {
   it('renders the public landing page at the public root route', () => {
     renderApp('/', { refresh: () => Promise.reject(new Error('No session')) })
@@ -47,6 +58,15 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: 'Un lugar para encontrarse.', level: 1 }),
     ).toBeTruthy()
+  })
+
+  it('renders the public menu page at /carta', async () => {
+    renderApp('/carta', authService)
+
+    expect(
+      await screen.findByRole('heading', { name: 'La carta de El Cruce.', level: 1 }),
+    ).toBeTruthy()
+    expect(await screen.findByText('La carta todavía no tiene platos publicados.')).toBeTruthy()
   })
 
   it('renders the rooms dashboard and navigation entry for an administrator', async () => {
