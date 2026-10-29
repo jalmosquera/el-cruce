@@ -6,6 +6,7 @@ const NAVIGATION_BY_ROLE = {
   administrator: [
     { to: '/dashboard', label: 'Resumen', end: true },
     { to: '/dashboard/administracion', label: 'Administración' },
+    { to: '/dashboard/operaciones', label: 'Operaciones' },
     { to: '/dashboard/habitaciones', label: 'Habitaciones' },
   ],
   manager: [

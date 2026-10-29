@@ -3,6 +3,7 @@ import { AuthProvider } from '../features/auth/AuthSession.jsx'
 import { LoginPage } from '../features/auth/LoginPage.jsx'
 import { PrivateRoute } from '../features/auth/PrivateRoute.jsx'
 import { DashboardHome, DashboardPlaceholder, DashboardShell } from '../features/dashboard/DashboardShell.jsx'
+import { OperationsPage } from '../features/operations/OperationsPage.jsx'
 import { PublicLanding } from '../features/public-landing/PublicLanding.jsx'
 import { PublicMenuPage } from '../features/public-menu/PublicMenuPage.jsx'
 import { RoomsPage } from '../features/rooms/RoomsPage.jsx'
@@ -19,7 +20,7 @@ function App({ authService }) {
             <Route index element={<DashboardHome />} />
             <Route path="administracion" element={<DashboardPlaceholder title="Administración" />} />
             <Route path="habitaciones" element={<RoomsPage />} />
-            <Route path="operaciones" element={<DashboardPlaceholder title="Operaciones" />} />
+            <Route path="operaciones" element={<OperationsPage />} />
             <Route path="mi-jornada" element={<DashboardPlaceholder title="Mi jornada" />} />
           </Route>
         </Route>

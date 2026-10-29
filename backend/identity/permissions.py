@@ -16,3 +16,16 @@ class IsInternalUser(BasePermission):
             and request.user.is_authenticated
             and request.user.role in UserRole.values
         )
+
+
+class IsManagerOrAdministrator(BasePermission):
+    """Allow internal administration only to managers and administrators."""
+
+    message = "Manager or administrator access is required."
+
+    def has_permission(self, request, view) -> bool:
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.role in {UserRole.MANAGER, UserRole.ADMINISTRATOR}
+        )

@@ -91,6 +91,32 @@ def test_manager_and_administrator_can_manage_employee_profiles_and_shifts(
     assert client.delete(f"{EMPLOYEES_URL}{employee_id}/").status_code == 204
 
 
+@pytest.mark.parametrize("role", [UserRole.MANAGER, UserRole.ADMINISTRATOR])
+def test_manager_and_administrator_can_reassign_an_employee_to_another_user(
+    role: str,
+    employee: Employee,
+) -> None:
+    operator = User.objects.create_user(username=f"{role}-user", password=PASSWORD, role=role)
+    replacement_user = User.objects.create_user(
+        username=f"{role}-replacement",
+        password=PASSWORD,
+        role=UserRole.EMPLOYEE,
+    )
+    client = APIClient()
+    client.force_authenticate(operator)
+
+    response = client.patch(
+        f"{EMPLOYEES_URL}{employee.pk}/",
+        {"user": replacement_user.pk},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["user"] == replacement_user.pk
+    employee.refresh_from_db()
+    assert employee.user_id == replacement_user.pk
+
+
 @pytest.mark.parametrize("url", [EMPLOYEES_URL, SHIFTS_URL])
 def test_anonymous_users_are_denied_employee_management(url: str) -> None:
     response = APIClient().get(url)
