@@ -52,6 +52,7 @@ class DishTranslationViewSet(viewsets.ModelViewSet):
 class PublicMenuView(APIView):
     """Return only published menu content in a predictable selected language."""
 
+    authentication_classes = ()
     permission_classes = (AllowAny,)
 
     def get(self, request) -> Response:

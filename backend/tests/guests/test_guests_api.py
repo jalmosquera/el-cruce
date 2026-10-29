@@ -1,11 +1,16 @@
 """PostgreSQL-backed API tests for internal guest management."""
 
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from guests.models import Guest
 from guests.normalization import DISPLAY_NAME_MAX_LENGTH, INTERNAL_NOTES_MAX_LENGTH
 from identity.models import User, UserRole
+from reservations.models import Reservation, ReservationStatus
+from rooms.models import Room
 
 pytestmark = pytest.mark.django_db
 
@@ -326,3 +331,32 @@ def test_partial_update_cannot_leave_an_unpaired_document_number(guest: Guest) -
     }
     guest.refresh_from_db()
     assert guest.document_number is None
+
+
+@pytest.mark.parametrize(
+    "reservation_status",
+    [ReservationStatus.PENDING, ReservationStatus.CANCELLED],
+)
+def test_deleting_a_guest_with_a_reservation_returns_conflict(
+    guest: Guest, reservation_status: str
+) -> None:
+    room = Room.objects.create(code="101", name="Double room 101", capacity=2)
+    check_in = timezone.localdate() + timedelta(days=30)
+    Reservation.objects.create(
+        room=room,
+        guest=guest,
+        check_in=check_in,
+        check_out=check_in + timedelta(days=2),
+        guest_count=1,
+        status=reservation_status,
+    )
+    client = authenticated_client(UserRole.MANAGER)
+
+    response = client.delete(f"{GUESTS_URL}{guest.pk}/")
+
+    assert response.status_code == 409
+    assert response.data["detail"].code == "guest_in_use"
+    assert str(response.data["detail"]) == (
+        "This guest cannot be deleted because a reservation references it."
+    )
+    assert Guest.objects.filter(pk=guest.pk).exists()

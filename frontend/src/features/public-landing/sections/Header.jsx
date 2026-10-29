@@ -1,17 +1,33 @@
 import { useState } from 'react'
+import { Link, useLocation } from 'react-router'
 
 const navigationItems = [
   { href: '#restaurante', label: 'Restaurante' },
   { href: '#estancia', label: 'Estancia' },
-  { href: '#carta', label: 'Carta' },
+  { href: '/carta', label: 'Carta' },
   { href: '#contacto', label: 'Ubicación' },
 ]
 
+const DESKTOP_LINK_CLASS = 'border-b border-transparent pb-1 transition hover:border-[#dfb468] hover:text-[#dfb468] focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd]'
+const MOBILE_LINK_CLASS = 'block py-2 transition hover:text-[#dfb468] focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd]'
+
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { pathname, search } = useLocation()
+  const selectedLanguage = new URLSearchParams(search).get('language')
 
   function closeMenu() {
     setIsMenuOpen(false)
+  }
+
+  function resolveHref(href) {
+    return pathname !== '/' ? `/${href}` : href
+  }
+
+  function resolveMenuHref() {
+    return selectedLanguage
+      ? `/carta?language=${encodeURIComponent(selectedLanguage)}`
+      : '/carta'
   }
 
   return (
@@ -22,9 +38,15 @@ export function Header() {
         </a>
         <nav aria-label="Navegación principal" className="hidden items-center gap-8 text-[0.68rem] font-semibold uppercase tracking-[0.2em] md:flex">
           {navigationItems.map((item) => (
-              <a key={item.href} href={item.href} className="border-b border-transparent pb-1 transition hover:border-[#dfb468] hover:text-[#dfb468] focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd]">
-              {item.label}
-            </a>
+            item.href.startsWith('#') ? (
+              <a key={item.href} href={resolveHref(item.href)} className={DESKTOP_LINK_CLASS}>
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.href} to={resolveMenuHref()} className={DESKTOP_LINK_CLASS}>
+                {item.label}
+              </Link>
+            )
           ))}
         </nav>
         <button
@@ -43,9 +65,15 @@ export function Header() {
           <ul className="mx-auto grid max-w-7xl gap-4 text-sm font-semibold uppercase tracking-[0.16em]">
             {navigationItems.map((item) => (
               <li key={item.href}>
-                <a href={item.href} onClick={closeMenu} className="block py-2 transition hover:text-[#dfb468] focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd]">
-                  {item.label}
-                </a>
+                {item.href.startsWith('#') ? (
+                  <a href={resolveHref(item.href)} onClick={closeMenu} className={MOBILE_LINK_CLASS}>
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link to={resolveMenuHref()} onClick={closeMenu} className={MOBILE_LINK_CLASS}>
+                    {item.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

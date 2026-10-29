@@ -1,7 +1,9 @@
+import { Link } from 'react-router'
+
 const menuGroups = [
-  { number: '01', title: 'Para empezar', description: 'Próximamente' },
-  { number: '02', title: 'De la cocina', description: 'Próximamente' },
-  { number: '03', title: 'Para brindar', description: 'Próximamente' },
+  { number: '01', title: 'Para empezar', description: 'En la carta' },
+  { number: '02', title: 'De la cocina', description: 'En la carta' },
+  { number: '03', title: 'Para brindar', description: 'En la carta' },
 ]
 
 export function MenuPreview() {
@@ -13,7 +15,12 @@ export function MenuPreview() {
             <p className="eyebrow-rule text-xs font-bold uppercase tracking-[0.22em] text-[#30231b]">03 · Carta</p>
             <h2 id="menu-title" className="display-font mt-6 text-5xl leading-[0.92] tracking-[-0.055em] sm:text-6xl">Una carta aún por descubrir.</h2>
           </div>
-          <p className="max-w-xs text-sm leading-6 text-[#30231b]">Previsualización editorial. Los platos, alérgenos y precios no están publicados.</p>
+          <div className="max-w-xs">
+            <p className="text-sm leading-6 text-[#30231b]">La carta completa reúne los platos publicados, sus precios y alérgenos declarados.</p>
+            <Link to="/carta" className="mt-5 inline-flex min-h-11 items-center border-b border-[#30231b] pb-1 text-xs font-bold uppercase tracking-[0.16em] transition hover:border-[#131313] hover:text-[#131313] focus:outline-2 focus:outline-offset-4 focus:outline-[#131313]">
+              Ver la carta completa <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
         <ul className="mt-5 divide-y divide-[#32271e]/35">
           {menuGroups.map((group) => (
