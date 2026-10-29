@@ -313,8 +313,11 @@ describe('RoomsPage', () => {
       'Capacity cannot be lower than the guest count of an occupying reservation.',
     )).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Editar habitación 101' })).toBeTruthy()
-    expect(screen.getByLabelText('Capacidad').getAttribute('aria-invalid')).toBe('true')
-    expect(document.activeElement).toBe(screen.getByLabelText('Capacidad'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Capacidad').getAttribute('aria-invalid')).toBe('true')
+      expect(document.activeElement).toBe(screen.getByLabelText('Capacidad'))
+    })
   })
 
   it('closes the delete confirmation with Escape without deleting and restores focus to the trigger', async () => {

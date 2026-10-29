@@ -21,25 +21,25 @@ const STATUS_OPTIONS = [
 const STATUS_PRESENTATION = {
   operational: {
     label: 'Operativa',
-    className: 'border-stone-300 bg-stone-100 text-stone-900',
+    className: 'border-cruce-success/30 bg-cruce-success-soft text-cruce-success',
   },
   maintenance: {
     label: 'En mantenimiento',
-    className: 'border-amber-300 bg-amber-50 text-amber-900',
+    className: 'border-cruce-amber/60 bg-cruce-amber/20 text-cruce-amber-dark',
   },
   out_of_service: {
     label: 'Fuera de servicio',
-    className: 'border-red-300 bg-red-50 text-red-900',
+    className: 'border-cruce-danger/35 bg-cruce-danger-soft text-cruce-danger',
   },
 }
 
 const FIELD_CLASS =
-  'mt-2 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-stone-900 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/40'
+  'mt-2 min-h-11 w-full rounded-md border border-cruce-line bg-cruce-paper px-3 text-cruce-ink shadow-xs outline-none placeholder:text-cruce-muted focus:border-cruce-focus focus:ring-2 focus:ring-cruce-focus disabled:cursor-not-allowed'
 
 function statusPresentation(status) {
   return STATUS_PRESENTATION[status] ?? {
     label: status,
-    className: 'border-stone-300 bg-stone-100 text-stone-800',
+    className: 'border-cruce-line bg-cruce-ivory text-cruce-ink',
   }
 }
 
@@ -49,7 +49,7 @@ function FieldError({ id, message }) {
   }
 
   return (
-    <p className="mt-1 text-sm text-red-700" id={id}>
+    <p className="mt-1 text-sm text-cruce-danger" id={id}>
       {message}
     </p>
   )
@@ -271,17 +271,18 @@ export function RoomsPage({ roomsService = roomsApi }) {
   return (
     <section aria-labelledby="rooms-title">
       <div inert={roomToDelete ? true : undefined}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="max-w-6xl border-b border-cruce-line pb-6 sm:flex sm:items-end sm:justify-between sm:gap-6">
           <div>
-            <h1 className="display-font text-3xl focus:outline-none" id="rooms-title" ref={pageHeadingRef} tabIndex={-1}>
+            <p className="text-xs font-semibold tracking-[0.18em] text-cruce-terracotta uppercase">Alojamiento</p>
+            <h1 className="display-font mt-2 text-3xl text-cruce-ink focus:outline-none sm:text-4xl" id="rooms-title" ref={pageHeadingRef} tabIndex={-1}>
               Habitaciones
             </h1>
-            <p className="mt-3 max-w-xl text-stone-700">
+            <p className="mt-3 max-w-xl leading-7 text-cruce-muted">
               Gestioná las habitaciones, su capacidad y su estado operativo.
             </p>
           </div>
           <button
-            className="min-h-11 rounded-md bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-5 min-h-11 w-full rounded-md bg-cruce-ink px-4 py-2 text-sm font-semibold text-cruce-ivory shadow-sm hover:bg-cruce-panel focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-ivory disabled:cursor-not-allowed disabled:opacity-60 sm:mt-0 sm:w-auto"
             disabled={isBusy}
             onClick={openCreateForm}
             type="button"
@@ -291,10 +292,10 @@ export function RoomsPage({ roomsService = roomsApi }) {
         </div>
 
         {loadError ? (
-          <div className="mt-6 rounded-lg border border-red-300 bg-red-50 p-4 text-red-900" role="alert">
+          <div className="mt-6 max-w-6xl rounded-md border border-cruce-danger/35 bg-cruce-danger-soft p-4 text-cruce-danger" role="alert">
             <p>{loadError}</p>
             <button
-              className="mt-3 min-h-11 rounded-md border border-red-400 px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-700"
+              className="mt-3 min-h-11 rounded-md border border-cruce-danger px-4 py-2 text-sm font-semibold hover:bg-cruce-paper/50 focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-danger-soft"
               onClick={reload}
               type="button"
             >
@@ -304,13 +305,13 @@ export function RoomsPage({ roomsService = roomsApi }) {
         ) : null}
 
         {actionError ? (
-          <p className="mt-6 rounded-lg border border-red-300 bg-red-50 p-4 text-red-900" role="alert">
+          <p className="mt-6 max-w-6xl rounded-md border border-cruce-danger/35 bg-cruce-danger-soft p-4 text-cruce-danger" role="alert">
             {actionError}
           </p>
         ) : null}
 
         {feedback ? (
-          <p className="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950" role="status">
+          <p className="mt-6 max-w-6xl rounded-md border border-cruce-success/30 bg-cruce-success-soft p-4 text-cruce-success" role="status">
             {feedback}
           </p>
         ) : null}
@@ -318,16 +319,16 @@ export function RoomsPage({ roomsService = roomsApi }) {
         {isFormOpen ? (
           <section
             aria-labelledby="room-form-title"
-            className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4 sm:p-6"
+            className="mt-6 max-w-6xl rounded-xl border border-cruce-line bg-cruce-paper p-4 shadow-sm sm:p-6"
           >
-            <h2 className="display-font text-2xl" id="room-form-title">
+            <h2 className="display-font text-2xl text-cruce-ink" id="room-form-title">
               {editingRoom ? `Editar habitación ${editingRoom.code}` : 'Nueva habitación'}
             </h2>
 
             {fieldErrorFields.length > 0 ? (
               <div
                 aria-labelledby="room-form-error-summary-title"
-                className="mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-900"
+                className="mt-4 rounded-md border border-cruce-danger/35 bg-cruce-danger-soft p-4 text-cruce-danger"
                 role="alert"
               >
                 <h3 className="text-sm font-semibold" id="room-form-error-summary-title">
@@ -343,13 +344,13 @@ export function RoomsPage({ roomsService = roomsApi }) {
 
             <form className="mt-4 grid gap-4 sm:grid-cols-2" noValidate onSubmit={handleSubmit}>
               <div>
-                <label className="block text-sm font-medium text-stone-800" htmlFor="room-code">
+                <label className="block text-sm font-semibold text-cruce-ink" htmlFor="room-code">
                   Código
                 </label>
                 <input
                   aria-describedby={codeDescribedBy}
                   aria-invalid={Boolean(fieldErrors.code)}
-                  className={`${FIELD_CLASS} ${fieldErrors.code ? 'border-red-500' : ''} ${editingRoom ? 'bg-stone-200 text-stone-600' : ''}`}
+                  className={`${FIELD_CLASS} ${fieldErrors.code ? 'border-cruce-danger' : ''} ${editingRoom ? 'bg-cruce-ivory text-cruce-muted' : ''}`}
                   disabled={Boolean(editingRoom)}
                   id="room-code"
                   maxLength={32}
@@ -361,7 +362,7 @@ export function RoomsPage({ roomsService = roomsApi }) {
                   value={form.code}
                 />
                 {editingRoom ? (
-                  <p className="mt-1 text-sm text-stone-600" id="room-code-hint">
+                  <p className="mt-1 text-sm text-cruce-muted" id="room-code-hint">
                     El código no se puede modificar después de crear la habitación.
                   </p>
                 ) : null}
@@ -369,13 +370,13 @@ export function RoomsPage({ roomsService = roomsApi }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-800" htmlFor="room-name">
+                <label className="block text-sm font-semibold text-cruce-ink" htmlFor="room-name">
                   Nombre
                 </label>
                 <input
                   aria-describedby={fieldErrors.name ? 'room-name-error' : undefined}
                   aria-invalid={Boolean(fieldErrors.name)}
-                  className={`${FIELD_CLASS} ${fieldErrors.name ? 'border-red-500' : ''}`}
+                  className={`${FIELD_CLASS} ${fieldErrors.name ? 'border-cruce-danger' : ''}`}
                   id="room-name"
                   maxLength={120}
                   name="name"
@@ -389,13 +390,13 @@ export function RoomsPage({ roomsService = roomsApi }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-800" htmlFor="room-capacity">
+                <label className="block text-sm font-semibold text-cruce-ink" htmlFor="room-capacity">
                   Capacidad
                 </label>
                 <input
                   aria-describedby={fieldErrors.capacity ? 'room-capacity-error' : undefined}
                   aria-invalid={Boolean(fieldErrors.capacity)}
-                  className={`${FIELD_CLASS} ${fieldErrors.capacity ? 'border-red-500' : ''}`}
+                  className={`${FIELD_CLASS} ${fieldErrors.capacity ? 'border-cruce-danger' : ''}`}
                   id="room-capacity"
                   min={1}
                   name="capacity"
@@ -410,13 +411,13 @@ export function RoomsPage({ roomsService = roomsApi }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-800" htmlFor="room-status">
+                <label className="block text-sm font-semibold text-cruce-ink" htmlFor="room-status">
                   Estado
                 </label>
                 <select
                   aria-describedby={fieldErrors.status ? 'room-status-error' : undefined}
                   aria-invalid={Boolean(fieldErrors.status)}
-                  className={`${FIELD_CLASS} ${fieldErrors.status ? 'border-red-500' : ''}`}
+                  className={`${FIELD_CLASS} ${fieldErrors.status ? 'border-cruce-danger' : ''}`}
                   id="room-status"
                   name="status"
                   onChange={handleFormChange}
@@ -434,14 +435,14 @@ export function RoomsPage({ roomsService = roomsApi }) {
 
               <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
                 <button
-                  className="min-h-11 rounded-md bg-amber-300 px-4 py-2 text-sm font-semibold text-stone-950 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="min-h-11 rounded-md bg-cruce-amber px-4 py-2 text-sm font-semibold text-cruce-ink hover:bg-cruce-amber/80 focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-paper disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isSaving}
                   type="submit"
                 >
                   {isSaving ? 'Guardando…' : editingRoom ? 'Guardar cambios' : 'Crear habitación'}
                 </button>
                 <button
-                  className="min-h-11 rounded-md border border-stone-400 px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="min-h-11 rounded-md border border-cruce-line bg-cruce-paper px-4 py-2 text-sm font-semibold text-cruce-ink hover:bg-cruce-ivory focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-paper disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isSaving}
                   onClick={closeForm}
                   type="button"
@@ -454,36 +455,36 @@ export function RoomsPage({ roomsService = roomsApi }) {
         ) : null}
 
         {isLoading ? (
-          <div className="mt-6 space-y-3 rounded-2xl border border-stone-200 bg-white p-4" role="status">
-            <p className="text-stone-700">Cargando habitaciones…</p>
-            <div aria-hidden="true" className="h-4 w-2/3 animate-pulse rounded bg-stone-200" />
-            <div aria-hidden="true" className="h-4 w-1/2 animate-pulse rounded bg-stone-200" />
+          <div className="mt-6 max-w-6xl space-y-3 rounded-xl border border-cruce-line bg-cruce-paper p-4 shadow-sm" role="status">
+            <p className="text-cruce-muted">Cargando habitaciones…</p>
+            <div aria-hidden="true" className="h-4 w-2/3 animate-pulse rounded bg-cruce-line" />
+            <div aria-hidden="true" className="h-4 w-1/2 animate-pulse rounded bg-cruce-line" />
           </div>
         ) : null}
 
         {!isLoading && !loadError && rooms.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-stone-300 bg-white p-6 text-stone-700">
+          <div className="mt-6 max-w-6xl rounded-xl border border-dashed border-cruce-line bg-cruce-paper p-6 text-cruce-muted shadow-sm">
             <p>Todavía no hay habitaciones registradas. Creá la primera con «Nueva habitación».</p>
           </div>
         ) : null}
 
         {!isLoading && rooms.length > 0 ? (
-          <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+          <div className="mt-6 max-w-6xl overflow-hidden rounded-xl border border-cruce-line bg-cruce-paper shadow-sm">
             <div
               aria-label="Habitaciones registradas"
-              className="overflow-x-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-inset"
+              className="overflow-x-auto overscroll-x-contain focus:outline-none focus-visible:ring-2 focus-visible:ring-cruce-focus focus-visible:ring-inset"
               role="region"
               tabIndex={0}
             >
-              <table className="w-full min-w-[36rem] text-left">
+              <table className="w-full min-w-[42rem] text-left">
                 <caption className="sr-only">Habitaciones registradas</caption>
                 <thead>
-                  <tr className="border-b border-stone-200 text-xs tracking-[0.12em] text-stone-600 uppercase">
-                    <th className="px-3 py-3 text-left font-semibold" scope="col">Código</th>
-                    <th className="px-3 py-3 text-left font-semibold" scope="col">Nombre</th>
-                    <th className="px-3 py-3 text-left font-semibold" scope="col">Capacidad</th>
-                    <th className="px-3 py-3 text-left font-semibold" scope="col">Estado</th>
-                    <th className="px-3 py-3 text-right font-semibold" scope="col">Acciones</th>
+                  <tr className="border-b border-cruce-line bg-cruce-ivory text-xs tracking-[0.12em] text-cruce-muted uppercase">
+                    <th className="px-4 py-3.5 text-left font-semibold" scope="col">Código</th>
+                    <th className="px-4 py-3.5 text-left font-semibold" scope="col">Nombre</th>
+                    <th className="px-4 py-3.5 text-left font-semibold" scope="col">Capacidad</th>
+                    <th className="px-4 py-3.5 text-left font-semibold" scope="col">Estado</th>
+                    <th className="px-4 py-3.5 text-right font-semibold" scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -491,22 +492,22 @@ export function RoomsPage({ roomsService = roomsApi }) {
                     const status = statusPresentation(room.status)
 
                     return (
-                      <tr className="border-b border-stone-200 last:border-0" key={room.id}>
-                        <td className="px-3 py-3">
-                          <span className="font-semibold text-stone-900">{room.code}</span>
+                      <tr className="border-b border-cruce-line/80 last:border-0 hover:bg-cruce-ivory/70" key={room.id}>
+                        <td className="px-4 py-4">
+                          <span className="font-semibold text-cruce-ink">{room.code}</span>
                         </td>
-                        <td className="px-3 py-3 text-stone-900">{room.name}</td>
-                        <td className="px-3 py-3 text-stone-900">{room.capacity}</td>
-                        <td className="px-3 py-3">
+                        <td className="px-4 py-4 text-cruce-ink">{room.name}</td>
+                        <td className="px-4 py-4 text-cruce-ink">{room.capacity}</td>
+                        <td className="px-4 py-4">
                           <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${status.className}`}>
                             {status.label}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-right">
-                          <div className="flex flex-wrap justify-end gap-2">
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex flex-nowrap justify-end gap-2">
                             <button
                               aria-label={`Editar habitación ${room.code}`}
-                              className="min-h-11 rounded-md border border-stone-300 px-3 text-sm font-semibold hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="min-h-11 rounded-md border border-cruce-line bg-cruce-paper px-3 text-sm font-semibold text-cruce-ink hover:bg-cruce-ivory focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isBusy}
                               onClick={(event) => openEditForm(event, room)}
                               type="button"
@@ -515,7 +516,7 @@ export function RoomsPage({ roomsService = roomsApi }) {
                             </button>
                             <button
                               aria-label={`Eliminar habitación ${room.code}`}
-                              className="min-h-11 rounded-md border border-red-300 px-3 text-sm font-semibold text-red-800 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="min-h-11 rounded-md border border-cruce-danger/55 bg-cruce-paper px-3 text-sm font-semibold text-cruce-danger hover:bg-cruce-danger-soft focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={isBusy}
                               onClick={(event) => openDeleteConfirmation(event, room)}
                               type="button"
@@ -535,26 +536,27 @@ export function RoomsPage({ roomsService = roomsApi }) {
       </div>
 
       {roomToDelete ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-cruce-ink/80 p-4 sm:items-center sm:p-6">
           <section
             aria-busy={isDeleting ? 'true' : undefined}
             aria-describedby="delete-room-description"
             aria-labelledby="delete-room-title"
             aria-modal="true"
-            className="w-full max-w-lg rounded-2xl border border-red-300 bg-red-50 p-4 shadow-xl focus:outline-none sm:p-6"
+            className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-cruce-danger/45 bg-cruce-paper p-4 text-cruce-ink shadow-2xl focus:outline-none sm:max-h-[calc(100dvh-3rem)] sm:p-6"
             ref={deleteDialogRef}
             role="alertdialog"
             tabIndex={-1}
           >
-            <h2 className="display-font text-2xl text-red-950" id="delete-room-title">
+            <p className="text-xs font-semibold tracking-[0.18em] text-cruce-terracotta uppercase">Acción permanente</p>
+            <h2 className="display-font mt-2 text-2xl text-cruce-ink" id="delete-room-title">
               Eliminar habitación {roomToDelete.code}
             </h2>
-            <p className="mt-2 text-red-900" id="delete-room-description">
+            <p className="mt-3 leading-7 text-cruce-muted" id="delete-room-description">
               La habitación <strong>{roomToDelete.code}</strong> se eliminará de forma permanente. Esta acción no se puede deshacer.
             </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <button
-                className="min-h-11 rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-11 rounded-md bg-cruce-danger px-4 py-2 text-sm font-semibold text-white hover:bg-cruce-terracotta focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-paper disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isDeleting}
                 onClick={confirmDelete}
                 type="button"
@@ -562,7 +564,7 @@ export function RoomsPage({ roomsService = roomsApi }) {
                 {isDeleting ? 'Eliminando…' : `Sí, eliminar ${roomToDelete.code}`}
               </button>
               <button
-                className="min-h-11 rounded-md border border-stone-400 bg-white px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-11 rounded-md border border-cruce-line bg-cruce-paper px-4 py-2 text-sm font-semibold text-cruce-ink hover:bg-cruce-ivory focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-paper disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isDeleting}
                 onClick={cancelDelete}
                 ref={cancelDeleteRef}

@@ -55,7 +55,7 @@ describe('App', () => {
     renderApp('/dashboard/habitaciones', createAuthService('administrator'))
 
     expect(await screen.findByRole('heading', { name: 'Habitaciones' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Habitaciones' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Habitaciones' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('link', { name: 'Administración' })).toBeTruthy()
     expect(adapter.mock.calls[0][0].url).toBe('/rooms/')
   })
