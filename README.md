@@ -28,7 +28,7 @@ No integrados todavía en `dev`:
 
 - Reservas.
 - Códigos QR.
-- Estrategia de publicación, prerender SEO y configuración de producción.
+- Estrategia de publicación y configuración de producción.
 
 El alcance del proyecto incluye reservas, códigos QR y contenido administrable, pero sólo la funcionalidad enumerada arriba debe considerarse disponible.
 
@@ -119,13 +119,31 @@ cd frontend
 npm run lint
 npm run test:run
 npm run coverage
+npm run test:prerender
+npm run build
+npm run verify:prerender
 ```
 
 La configuración exige como mínimo 80% de cobertura de forma independiente para backend y frontend. Consultá [`docs/development.md`](docs/development.md) para los comandos de lint y [`backend/README.md`](backend/README.md) para la preparación segura de pruebas del backend.
 
+## Archivos estáticos públicos y SEO
+
+El build del frontend genera una salida estática mínima para `/`, las rutas canónicas localizadas de carta `/carta/es`, `/carta/en`, `/carta/fr`, `/carta/de` y `/carta/it`, y el shell privado `/dashboard`: metadatos por ruta pública, `sitemap.xml`, `robots.txt` y HTML semántico de respaldo. Cada carta localizada tiene su propio `lang`, título y descripción genéricos localizados, URL canónica propia y conjunto completo de enlaces `hreflang`. No incorpora platos ni otros datos en vivo: la SPA carga el contenido publicado desde la API cuando se abre. `/carta` y el formato heredado `/carta?language=<idioma>` siguen siendo compatibles; `/carta` canonicaliza a `/carta/es` y las query URLs no se incluyen en el sitemap.
+
+Antes de un build para un entorno publicado, definí el origen HTTPS aprobado, sin ruta ni secretos. En Fish:
+
+```fish
+set -lx PUBLIC_SITE_URL https://public.example
+cd frontend
+npm run build
+npm run verify:prerender
+```
+
+`PUBLIC_SITE_URL` es una variable de build pública y no se incluye en el bundle del navegador. Debe ser un origen HTTPS absoluto sin credenciales, ruta, query ni fragmento; si no se define, el generador usa `https://elcruce.example` sólo para artefactos locales. El alojamiento deberá cargar el directorio `frontend/dist` completo, conservar `sitemap.xml` y `robots.txt`, servir `carta/index.html` directamente para `/carta`, y cada `carta/<idioma>/index.html` para su URL canónica localizada. Las rutas SPA públicas sin un archivo estático usan `index.html`; `/dashboard` y sus rutas anidadas deben usar `dashboard/index.html` (o devolver `X-Robots-Tag: noindex`). `robots.txt` bloquea el rastreo del dashboard como defensa en profundidad, pero por sí solo no garantiza que no se indexe. La elección y configuración del proveedor de alojamiento siguen pendientes de aprobación.
+
 ## Limitaciones actuales
 
 - La configuración de producción, el despliegue y la estrategia de publicación siguen pendientes de aprobación.
-- Reservas y códigos QR no están integrados. La API expone autenticación, habitaciones, menú, empleados y turnos, y huéspedes; no existen endpoints de reservas ni de códigos QR.
+- Las reservas internas están integradas: la API expone autenticación, habitaciones, menú, empleados y turnos, huéspedes y reservas. Los códigos QR permanentes siguen pendientes de integrar; el PR correspondiente está en revisión.
 - La interfaz pública de la carta está en la rama de trabajo actual, pendiente de revisión y merge.
 - No se debe usar información personal real, credenciales reales ni secretos en el repositorio.

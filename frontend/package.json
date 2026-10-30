@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test:prerender": "node --test scripts/prerender.node.mjs",
+    "verify:prerender": "node scripts/verify-prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
