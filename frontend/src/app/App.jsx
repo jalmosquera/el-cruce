@@ -10,6 +10,7 @@ import { GuestsPage } from '../features/guests/GuestsPage.jsx'
 import { MENU_LANGUAGES } from '../features/public-menu/menuApi.js'
 import { RoomsPage } from '../features/rooms/RoomsPage.jsx'
 import { ReservationsPage } from '../features/reservations/ReservationsPage.jsx'
+import { MenuAdminPage } from '../features/menu-admin/MenuAdminPage.jsx'
 
 function PublicMenuLanguageRoute() {
   const { language } = useParams()
@@ -39,6 +40,7 @@ function App({ authService }) {
             <Route path="reservas" element={<ReservationsPage />} />
             <Route path="huespedes" element={<GuestsPage />} />
             <Route path="operaciones" element={<OperationsPage />} />
+            <Route path="carta" element={<MenuAdminPage />} />
             <Route path="mi-jornada" element={<DashboardPlaceholder title="Mi jornada" />} />
           </Route>
         </Route>

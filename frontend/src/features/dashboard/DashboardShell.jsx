@@ -10,6 +10,7 @@ const NAVIGATION_BY_ROLE = {
     { to: '/dashboard/habitaciones', label: 'Habitaciones' },
     { to: '/dashboard/reservas', label: 'Reservas' },
     { to: '/dashboard/huespedes', label: 'Huéspedes' },
+    { to: '/dashboard/carta', label: 'Carta' },
   ],
   manager: [
     { to: '/dashboard', label: 'Resumen', end: true },
@@ -17,6 +18,7 @@ const NAVIGATION_BY_ROLE = {
     { to: '/dashboard/habitaciones', label: 'Habitaciones' },
     { to: '/dashboard/reservas', label: 'Reservas' },
     { to: '/dashboard/huespedes', label: 'Huéspedes' },
+    { to: '/dashboard/carta', label: 'Carta' },
   ],
   employee: [{ to: '/dashboard', label: 'Resumen', end: true }, { to: '/dashboard/mi-jornada', label: 'Mi jornada' }],
 }

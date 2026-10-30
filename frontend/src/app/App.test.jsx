@@ -103,6 +103,48 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Operaciones' })).toBeTruthy()
   })
 
+  it('shows the menu administration navigation and route to managers without a frontend role block', async () => {
+    mockRoomsResponse([])
+
+    renderApp('/dashboard/carta', createAuthService('manager'))
+
+    expect(await screen.findByRole('heading', { name: 'Carta' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Carta' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('isolates the dashboard and restores focus for the menu administration modal', async () => {
+    mockRoomsResponse([])
+    renderApp('/dashboard/carta', createAuthService('manager'))
+
+    await screen.findByRole('heading', { name: 'Carta' })
+    const dashboardShell = document.querySelector('[data-dashboard-shell]')
+    const trigger = await screen.findByRole('button', { name: 'Nueva categoría' })
+    fireEvent.click(trigger)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Nueva categoría' })
+    const closeButton = screen.getByRole('button', { name: 'Cerrar' })
+    expect(dashboardShell.hasAttribute('inert')).toBe(true)
+    expect(dialog.closest('[data-dashboard-shell]')).toBeNull()
+    expect(document.activeElement).toBe(closeButton)
+
+    fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cancelar' }))
+    fireEvent.keyDown(dialog, { key: 'Escape' })
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(dashboardShell.hasAttribute('inert')).toBe(false)
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('does not expose the menu administration navigation to employees', async () => {
+    mockRoomsResponse([])
+
+    renderApp('/dashboard', createAuthService('employee'))
+
+    await screen.findByRole('heading', { name: 'Bienvenido, ana' })
+    expect(screen.queryByRole('link', { name: 'Carta' })).toBeNull()
+  })
+
   it('marks the authenticated dashboard as non-indexable at runtime', async () => {
     renderApp('/dashboard', createAuthService('administrator'))
 
@@ -136,7 +178,11 @@ describe('App', () => {
     renderApp('/dashboard/reservas', createAuthService('manager'))
     expect(await screen.findByRole('heading', { name: 'Reservas' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Reservas' }).getAttribute('aria-current')).toBe('page')
-    expect(adapter.mock.calls.map(([config]) => config.url)).toEqual(expect.arrayContaining(['/reservations/', '/rooms/', '/guests/']))
+    await waitFor(() => {
+      expect(adapter.mock.calls.map(([config]) => config.url)).toEqual(
+        expect.arrayContaining(['/reservations/', '/rooms/', '/guests/']),
+      )
+    })
   })
 
   it('inerts all dashboard controls while the reservation dialog is open and restores them after close', async () => {
