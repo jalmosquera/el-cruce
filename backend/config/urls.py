@@ -8,6 +8,8 @@ urlpatterns = [
     path("api/guests/", include("guests.urls")),
     path("api/rooms/", include("rooms.urls")),
     path("api/menu/", include("menu.urls")),
+    path("api/qr-codes/", include("qr_codes.urls")),
     path("api/reservations/", include("reservations.urls")),
     path("api/", include("employees.urls")),
+    path("q/", include("qr_codes.public_urls")),
 ]

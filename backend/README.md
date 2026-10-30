@@ -83,7 +83,7 @@ uv run pytest
 ```
 
 The test configuration collects `tests/`, runs branch coverage for `config`,
-`employees`, `guests`, `identity`, `rooms`, `menu`, and `reservations`, and
+`employees`, `guests`, `identity`, `rooms`, `menu`, `qr_codes`, and `reservations`, and
 fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
@@ -726,3 +726,60 @@ DRF field-level codes also apply:
   because that field overrides DRF's default message.
 - Invalid choice values, including an unknown `status`, use DRF's
   `invalid_choice` code.
+
+## Permanent QR-code API contract
+
+QR codes are managed internally and generated locally with Segno. They do not
+store generated SVG or PNG blobs: each protected download is rendered from the
+persisted permanent identifier when requested.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET`, `POST` | `/api/qr-codes/` | List or create QR redirect records. |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/qr-codes/{id}/` | Manage one QR redirect record. |
+| `GET` | `/api/qr-codes/{id}/download/svg/` | Download a generated SVG. |
+| `GET` | `/api/qr-codes/{id}/download/png/` | Download a generated PNG. |
+| `GET` | `/q/{identifier}/` | Public stable redirect for a scanned QR code. |
+
+The API endpoints require a Bearer access token from an `administrator` or
+`manager`; anonymous callers receive `401` and employees receive `403`. SVG
+and PNG downloads use `Content-Disposition: attachment`; their media types are
+respectively `image/svg+xml` and `image/png`.
+
+Create requests accept `name`, `target_path`, and optional `is_active`:
+
+```json
+{"name": "Carta terraza", "target_path": "/carta", "is_active": true}
+```
+
+Responses also expose read-only `id`, opaque `identifier`, `created_by`,
+`created_at`, and `updated_at`. `created_by` is set from the authenticated
+creator and becomes `null` if that user is removed. The identifier is a
+random, URL-safe 32-character UUID-like value, is unique at the database
+level, and is immutable through this API. It is never a database ID, user ID,
+guest datum, or target URL.
+
+### Permanence and redirect security
+
+Every generated QR contains **only** the relative stable path
+`/q/{identifier}/`; it never contains guest data, user data, a direct mutable
+content URL, or a third-party URL. A successful public request responds with
+`302 Found` to the persisted local target. A temporary redirect is intentional:
+the stable QR path remains permanent while staff can change the target without
+clients permanently caching the former destination. Unknown and inactive codes
+return `404`.
+
+`target_path` is not a general redirect URL. The current allowlist contains
+exactly `/carta`. It must be an absolute local path and rejects schemes, hosts
+(including `//host`), query strings, fragments, API/private paths, and every
+unregistered route. Supporting a future public target requires updating the
+explicit allowlist, its database constraint, tests, and this contract; it must
+not weaken validation into a prefix or arbitrary-path policy.
+
+The default rendering has dark `#111827` modules on white `#ffffff`, high error
+correction (`H`), and a four-module quiet zone. PNG generation uses a scale of
+10 pixels per module. For the current 37-module QR matrix plus the quiet zone,
+this produces a 450px square, about 38mm at a 300-DPI print assumption. Actual
+physical size varies with the generated QR version and output device; print
+workflows must preserve the quiet zone and avoid scaling that makes modules too
+small. Logo or image embedding is intentionally not implemented.
