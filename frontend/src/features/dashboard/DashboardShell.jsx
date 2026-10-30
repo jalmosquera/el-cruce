@@ -8,12 +8,14 @@ const NAVIGATION_BY_ROLE = {
     { to: '/dashboard/administracion', label: 'Administración' },
     { to: '/dashboard/operaciones', label: 'Operaciones' },
     { to: '/dashboard/habitaciones', label: 'Habitaciones' },
+    { to: '/dashboard/reservas', label: 'Reservas' },
     { to: '/dashboard/huespedes', label: 'Huéspedes' },
   ],
   manager: [
     { to: '/dashboard', label: 'Resumen', end: true },
     { to: '/dashboard/operaciones', label: 'Operaciones' },
     { to: '/dashboard/habitaciones', label: 'Habitaciones' },
+    { to: '/dashboard/reservas', label: 'Reservas' },
     { to: '/dashboard/huespedes', label: 'Huéspedes' },
   ],
   employee: [{ to: '/dashboard', label: 'Resumen', end: true }, { to: '/dashboard/mi-jornada', label: 'Mi jornada' }],
@@ -65,7 +67,7 @@ export function DashboardShell() {
   }
 
   return (
-    <div className="min-h-screen bg-cruce-ink text-cruce-ink">
+    <div className="min-h-screen bg-cruce-ink text-cruce-ink" data-dashboard-shell="true">
       <a className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:min-h-11 focus:rounded-md focus:bg-cruce-amber focus:px-4 focus:py-3 focus:font-semibold focus:text-cruce-ink focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-ink" href="#dashboard-content">
         Ir al contenido principal
       </a>

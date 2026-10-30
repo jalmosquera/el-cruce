@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
@@ -129,5 +129,44 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Huéspedes' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Huéspedes' }).getAttribute('aria-current')).toBe('page')
     expect(adapter.mock.calls[0][0].url).toBe('/guests/')
+  })
+
+  it('renders reservations and navigation for managers without a frontend route role block', async () => {
+    const adapter = mockRoomsResponse([])
+    renderApp('/dashboard/reservas', createAuthService('manager'))
+    expect(await screen.findByRole('heading', { name: 'Reservas' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Reservas' }).getAttribute('aria-current')).toBe('page')
+    expect(adapter.mock.calls.map(([config]) => config.url)).toEqual(expect.arrayContaining(['/reservations/', '/rooms/', '/guests/']))
+  })
+
+  it('inerts all dashboard controls while the reservation dialog is open and restores them after close', async () => {
+    mockRoomsResponse([])
+    renderApp('/dashboard/reservas', createAuthService('manager'))
+
+    await screen.findByRole('heading', { name: 'Reservas' })
+
+    const dashboardShell = document.querySelector('[data-dashboard-shell]')
+    const skipLink = dashboardShell.querySelector('a[href="#dashboard-content"]')
+    const logoutButton = screen.getByRole('button', { name: 'Cerrar sesión' })
+    const newReservationButton = screen.getByRole('button', { name: 'Nueva reserva' })
+
+    await waitFor(() => expect(newReservationButton.disabled).toBe(false))
+    fireEvent.click(newReservationButton)
+
+    const dialog = await waitFor(() => {
+      const currentDialog = document.querySelector('[role="dialog"]')
+      expect(currentDialog).not.toBeNull()
+      return currentDialog
+    })
+    expect(dashboardShell.hasAttribute('inert')).toBe(true)
+    expect(skipLink.closest('[inert]')).toBe(dashboardShell)
+    expect(logoutButton.closest('[inert]')).toBe(dashboardShell)
+    expect(dialog.closest('[data-dashboard-shell]')).toBeNull()
+
+    fireEvent.click(dialog.querySelector('button'))
+
+    await waitFor(() => expect(dashboardShell.hasAttribute('inert')).toBe(false))
+    expect(skipLink.closest('[inert]')).toBeNull()
+    expect(logoutButton.closest('[inert]')).toBeNull()
   })
 })
