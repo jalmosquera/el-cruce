@@ -7,17 +7,18 @@ dependencies = [
     "djangorestframework>=3.18.3",
     "djangorestframework-simplejwt>=5.5.1",
     "psycopg[binary]>=3.3.6",
+    "segno>=1.6.6",
 ]
 
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 testpaths = ["tests"]
-addopts = "--strict-markers --cov=config --cov=employees --cov=guests --cov=identity --cov=rooms --cov=menu --cov=reservations --cov-branch --cov-report=term-missing --cov-report=xml"
+addopts = "--strict-markers --cov=config --cov=employees --cov=guests --cov=identity --cov=rooms --cov=menu --cov=qr_codes --cov=reservations --cov-branch --cov-report=term-missing --cov-report=xml"
 
 [tool.coverage.run]
 branch = true
-source = ["config", "employees", "guests", "identity", "rooms", "menu", "reservations"]
+source = ["config", "employees", "guests", "identity", "rooms", "menu", "qr_codes", "reservations"]
 
 [tool.coverage.report]
 fail_under = 80
