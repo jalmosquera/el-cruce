@@ -67,10 +67,16 @@ describe('PublicLanding', () => {
     expect(screen.getByTestId('location').textContent).toBe('/carta?language=fr')
   })
 
+  it('preserves a canonical menu language path in the header Carta link', () => {
+    renderPublicLanding('/carta/de')
+
+    expect(screen.getByRole('link', { name: 'Carta' }).getAttribute('href')).toBe('/carta/de')
+  })
+
   it('links the menu preview to the full public menu', () => {
     renderPublicLanding()
 
-    expect(screen.getByRole('link', { name: 'Ver la carta completa' }).getAttribute('href')).toBe('/carta')
+    expect(screen.getByRole('link', { name: 'Ver la carta completa' }).getAttribute('href')).toBe('/carta/es')
   })
 })
 

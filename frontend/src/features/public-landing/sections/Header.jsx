@@ -25,6 +25,12 @@ export function Header() {
   }
 
   function resolveMenuHref() {
+    const pathLanguage = pathname.match(/^\/carta\/(es|en|fr|de|it)$/)?.[1]
+
+    if (pathLanguage) {
+      return `/carta/${pathLanguage}`
+    }
+
     return selectedLanguage
       ? `/carta?language=${encodeURIComponent(selectedLanguage)}`
       : '/carta'

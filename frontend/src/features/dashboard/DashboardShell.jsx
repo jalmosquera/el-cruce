@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useAuthSession } from '../auth/useAuthSession.js'
 
@@ -28,6 +28,28 @@ export function DashboardShell() {
   const navigate = useNavigate()
   const navigation = NAVIGATION_BY_ROLE[user.role] ?? []
   const [logoutError, setLogoutError] = useState('')
+
+  useEffect(() => {
+    let robots = document.querySelector('meta[name="robots"]')
+    const createdRobots = !robots
+
+    if (!robots) {
+      robots = document.createElement('meta')
+      robots.name = 'robots'
+      document.head.append(robots)
+    }
+
+    const previousContent = robots.content
+    robots.content = 'noindex, nofollow'
+
+    return () => {
+      if (createdRobots) {
+        robots.remove()
+      } else {
+        robots.content = previousContent
+      }
+    }
+  }, [])
 
   async function handleLogout() {
     setLogoutError('')

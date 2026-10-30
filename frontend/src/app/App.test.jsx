@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
 import { apiClient } from '../lib/apiClient.js'
+import { fetchPublicMenu } from '../features/public-menu/menuApi.js'
 
 const originalAdapter = apiClient.defaults.adapter
 
@@ -69,6 +70,18 @@ describe('App', () => {
     expect(await screen.findByText('La carta todavía no tiene platos publicados.')).toBeTruthy()
   })
 
+  it('selects a localized menu path and safely redirects an invalid path to Spanish', async () => {
+    renderApp('/carta/en', authService)
+
+    await screen.findByRole('heading', { name: 'La carta de El Cruce.', level: 1 })
+    expect(fetchPublicMenu).toHaveBeenLastCalledWith('en', expect.any(Object))
+
+    renderApp('/carta/pt', authService)
+
+    await screen.findAllByRole('heading', { name: 'La carta de El Cruce.', level: 1 })
+    expect(fetchPublicMenu).toHaveBeenLastCalledWith('es', expect.any(Object))
+  })
+
   it('renders the rooms dashboard and navigation entry for an administrator', async () => {
     const adapter = mockRoomsResponse()
 
@@ -88,6 +101,14 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Habitaciones' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Habitaciones' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Operaciones' })).toBeTruthy()
+  })
+
+  it('marks the authenticated dashboard as non-indexable at runtime', async () => {
+    renderApp('/dashboard', createAuthService('administrator'))
+
+    await screen.findByRole('heading', { name: 'Bienvenido, ana' })
+
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow')
   })
 
   it('keeps the rooms route reachable for an employee while hiding its navigation entry', async () => {
