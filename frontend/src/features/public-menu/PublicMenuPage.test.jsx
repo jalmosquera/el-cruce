@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate, useParams } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PublicMenuPage } from './PublicMenuPage.jsx'
 import { MenuPayloadError, MENU_LANGUAGES, fetchPublicMenu } from './menuApi.js'
@@ -172,6 +172,12 @@ function HistoryControls() {
   )
 }
 
+function LocalizedMenuRoute() {
+  const { language } = useParams()
+
+  return <PublicMenuPage pathLanguage={language} />
+}
+
 function renderPage(initialEntry = '/carta') {
   const initialEntries = Array.isArray(initialEntry) ? initialEntry : [initialEntry]
 
@@ -183,6 +189,16 @@ function renderPage(initialEntry = '/carta') {
           element={(
             <>
               <PublicMenuPage />
+              <LocationProbe />
+              <HistoryControls />
+            </>
+          )}
+        />
+        <Route
+          path="/carta/:language"
+          element={(
+            <>
+              <LocalizedMenuRoute />
               <LocationProbe />
               <HistoryControls />
             </>
@@ -280,9 +296,9 @@ describe('PublicMenuPage', () => {
     fireEvent.click(screen.getByRole('link', { name: 'English' }))
 
     expect(await screen.findByRole('heading', { name: 'Spanish omelette', level: 3 })).toBeTruthy()
-    expect(screen.getByTestId('location').textContent).toBe('/carta?language=en')
+    expect(screen.getByTestId('location').textContent).toBe('/carta/en')
     expect(screen.getByRole('link', { name: 'English' }).getAttribute('aria-current')).toBe('true')
-    expect(spanishLink.getAttribute('aria-current')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Español' }).getAttribute('aria-current')).toBeNull()
     expect(fetchPublicMenu).toHaveBeenLastCalledWith('en', expect.objectContaining({ signal: expect.any(AbortSignal) }))
   })
 
@@ -298,7 +314,7 @@ describe('PublicMenuPage', () => {
     fireEvent.click(screen.getByRole('link', { name: 'English' }))
 
     expect(await screen.findByRole('heading', { name: 'Spanish omelette', level: 3 })).toBeTruthy()
-    expect(screen.getByTestId('location').textContent).toBe('/carta?language=en')
+    expect(screen.getByTestId('location').textContent).toBe('/carta/en')
 
     fireEvent.click(screen.getByRole('button', { name: 'Atrás' }))
 
@@ -308,7 +324,7 @@ describe('PublicMenuPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Adelante' }))
 
     expect(await screen.findByRole('heading', { name: 'Spanish omelette', level: 3 })).toBeTruthy()
-    expect(screen.getByTestId('location').textContent).toBe('/carta?language=en')
+    expect(screen.getByTestId('location').textContent).toBe('/carta/en')
   })
 
   it.each(MENU_LANGUAGES)('renders the $code menu with a localized price and language attributes', async ({ code }) => {
@@ -326,6 +342,25 @@ describe('PublicMenuPage', () => {
     } else {
       expect(screen.getByText('Original: Tortilla española').getAttribute('lang')).toBe('es')
     }
+  })
+
+  it('uses the language from a localized path over a conflicting legacy query parameter', async () => {
+    fetchPublicMenu.mockResolvedValue(ENGLISH_MENU)
+
+    renderPage('/carta/en?language=fr')
+
+    expect(await screen.findByRole('heading', { name: 'Spanish omelette', level: 3 })).toBeTruthy()
+    expect(fetchPublicMenu).toHaveBeenLastCalledWith('en', expect.objectContaining({ signal: expect.any(AbortSignal) }))
+    expect(screen.getByTestId('location').textContent).toBe('/carta/en?language=fr')
+  })
+
+  it('keeps legacy query URLs compatible with their requested API language', async () => {
+    fetchPublicMenu.mockResolvedValue(ENGLISH_MENU)
+
+    renderPage('/carta?language=en')
+
+    expect(await screen.findByRole('heading', { name: 'Spanish omelette', level: 3 })).toBeTruthy()
+    expect(fetchPublicMenu).toHaveBeenLastCalledWith('en', expect.objectContaining({ signal: expect.any(AbortSignal) }))
   })
 
   it('announces a loading state while the menu is requested', () => {
@@ -483,7 +518,7 @@ describe('PublicMenuPage', () => {
 
     const { unmount } = renderPage()
 
-    expect(document.title).toBe('La carta · El Cruce')
+    expect(document.title).toBe('La carta | El Cruce')
 
     unmount()
 

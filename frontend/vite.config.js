@@ -1,12 +1,25 @@
 import { defineConfig } from 'vitest/config'
+import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { generatePrerenderedFiles } from './scripts/prerender.mjs'
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const environment = loadEnv(mode, process.cwd(), '')
   const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:8000'
+  const publicSiteUrl = process.env.PUBLIC_SITE_URL ?? environment.PUBLIC_SITE_URL
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'static-prerender-seo',
+        async closeBundle() {
+          await generatePrerenderedFiles({ publicSiteUrl })
+        },
+      },
+    ],
     server: {
       host: '127.0.0.1',
       port: 9000,

@@ -26,7 +26,7 @@ Not yet integrated into `dev`:
 
 - Reservations.
 - QR codes.
-- Publishing, SEO prerendering, and production configuration strategy.
+- Publishing and production configuration strategy.
 
 The project scope includes reservations, QR codes, and manageable content, but only the functionality listed above should be treated as available.
 
@@ -117,13 +117,31 @@ cd frontend
 npm run lint
 npm run test:run
 npm run coverage
+npm run test:prerender
+npm run build
+npm run verify:prerender
 ```
 
 The configuration enforces at least 80% coverage independently for the backend and frontend. See [`docs/development.md`](docs/development.md) for lint commands and [`backend/README.md`](backend/README.md) for safe backend test setup.
 
+## Public static files and SEO
+
+The frontend build generates a minimal static output for `/`, the canonical localized menu routes `/carta/es`, `/carta/en`, `/carta/fr`, `/carta/de`, and `/carta/it`, and the private `/dashboard` shell: public-route metadata, `sitemap.xml`, `robots.txt`, and semantic fallback HTML. Every localized menu has its own `lang`, generic localized title and description, self-canonical URL, and complete `hreflang` set. It does not embed dishes or other live data; the SPA loads published content from the API when opened. `/carta` and the legacy `/carta?language=<language>` format remain compatible; `/carta` canonicalizes to `/carta/es`, and query URLs are excluded from the sitemap.
+
+Before building for a published environment, set the approved HTTPS origin without a path or secrets. In Fish:
+
+```fish
+set -lx PUBLIC_SITE_URL https://public.example
+cd frontend
+npm run build
+npm run verify:prerender
+```
+
+`PUBLIC_SITE_URL` is a public build variable and is not included in the browser bundle. It must be an absolute HTTPS origin without credentials, a path, query, or fragment; when it is unset, the generator uses `https://elcruce.example` only for local artifacts. Hosting must upload the complete `frontend/dist` directory, retain `sitemap.xml` and `robots.txt`, serve `carta/index.html` directly for `/carta`, and serve each `carta/<language>/index.html` at its localized canonical URL. Public SPA routes without a static file use `index.html`; `/dashboard` plus nested dashboard routes must use `dashboard/index.html` (or return `X-Robots-Tag: noindex`). `robots.txt` blocks dashboard crawling as defense in depth, but does not by itself guarantee noindex. Selecting and configuring the hosting provider remains pending approval.
+
 ## Current limitations
 
 - Production configuration, deployment, and the publishing strategy are pending approval.
-- Reservations and QR codes are not integrated. The API exposes authentication, rooms, menu, employees and shifts, and guests; there are no reservation or QR code endpoints.
+- Internal reservations are integrated: the API exposes authentication, rooms, menu, employees and shifts, guests, and reservations. Permanent QR codes are still pending integration; their PR is under review.
 - The public menu UI lives on the current working branch and is pending review and merge.
 - Do not use real personal data, credentials, or secrets in the repository.

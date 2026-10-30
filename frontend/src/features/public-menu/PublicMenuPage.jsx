@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { Footer } from '../public-landing/sections/Footer.jsx'
 import { Header } from '../public-landing/sections/Header.jsx'
 import { DEFAULT_MENU_LANGUAGE, MenuPayloadError, MENU_LANGUAGES, fetchPublicMenu } from './menuApi.js'
@@ -21,7 +21,7 @@ const ALLERGEN_LABELS = {
   sulphur_dioxide_and_sulphites: 'Sulfitos',
 }
 
-const DOCUMENT_TITLE = 'La carta · El Cruce'
+const DOCUMENT_TITLE = 'La carta | El Cruce'
 
 const ERROR_COPY = {
   network: {
@@ -107,7 +107,7 @@ function LanguageSelector({ currentLanguage }) {
                     : 'border-[#f4eddd]/30 text-[#f4eddd] hover:border-[#e1bd78] hover:text-[#e1bd78]'
                 }`}
                 lang={option.code}
-                to={`/carta?language=${option.code}`}
+                to={`/carta/${option.code}`}
               >
                 {option.label}
               </Link>
@@ -219,9 +219,10 @@ function MenuCategory({ category, language }) {
   )
 }
 
-export function PublicMenuPage() {
+export function PublicMenuPage({ pathLanguage = null }) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const requestedLanguage = (searchParams.get('language') || DEFAULT_MENU_LANGUAGE).trim().toLowerCase()
+  const navigate = useNavigate()
+  const requestedLanguage = pathLanguage ?? (searchParams.get('language') || DEFAULT_MENU_LANGUAGE).trim().toLowerCase()
   const [reloadKey, setReloadKey] = useState(0)
   const [result, setResult] = useState(null)
   const loadedRequestKeyRef = useRef(null)
@@ -241,7 +242,7 @@ export function PublicMenuPage() {
   useEffect(() => {
     const requestKey = `${requestedLanguage}:${reloadKey}`
 
-    // After a 400 fallback we rewrite the URL to ?language=es with replace history.
+    // After a 400 fallback we rewrite the URL to Spanish with replace history.
     // The Spanish payload is already loaded under this key, so skip the duplicate request.
     if (loadedRequestKeyRef.current === requestKey) {
       return undefined
@@ -276,7 +277,11 @@ export function PublicMenuPage() {
                 menu,
                 usedFallback: true,
               })
-              setSearchParams({ language: DEFAULT_MENU_LANGUAGE }, { replace: true })
+              if (pathLanguage) {
+                navigate(`/carta/${DEFAULT_MENU_LANGUAGE}`, { replace: true })
+              } else {
+                setSearchParams({ language: DEFAULT_MENU_LANGUAGE }, { replace: true })
+              }
             }
           } catch (fallbackError) {
             if (isActive) {
@@ -302,7 +307,7 @@ export function PublicMenuPage() {
       isActive = false
       controller.abort()
     }
-  }, [requestedLanguage, reloadKey, setSearchParams])
+  }, [navigate, pathLanguage, requestedLanguage, reloadKey, setSearchParams])
 
   const state = result?.requestedLanguage === requestedLanguage && result.reloadKey === reloadKey
     ? result

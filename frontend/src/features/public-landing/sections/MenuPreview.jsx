@@ -17,7 +17,7 @@ export function MenuPreview() {
           </div>
           <div className="max-w-xs">
             <p className="text-sm leading-6 text-[#30231b]">La carta completa reúne los platos publicados, sus precios y alérgenos declarados.</p>
-            <Link to="/carta" className="mt-5 inline-flex min-h-11 items-center border-b border-[#30231b] pb-1 text-xs font-bold uppercase tracking-[0.16em] transition hover:border-[#131313] hover:text-[#131313] focus:outline-2 focus:outline-offset-4 focus:outline-[#131313]">
+            <Link to="/carta/es" className="mt-5 inline-flex min-h-11 items-center border-b border-[#30231b] pb-1 text-xs font-bold uppercase tracking-[0.16em] transition hover:border-[#131313] hover:text-[#131313] focus:outline-2 focus:outline-offset-4 focus:outline-[#131313]">
               Ver la carta completa <span aria-hidden="true">→</span>
             </Link>
           </div>

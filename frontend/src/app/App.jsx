@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router'
+import { Navigate, Route, Routes, useParams } from 'react-router'
 import { AuthProvider } from '../features/auth/AuthSession.jsx'
 import { LoginPage } from '../features/auth/LoginPage.jsx'
 import { PrivateRoute } from '../features/auth/PrivateRoute.jsx'
@@ -6,7 +6,19 @@ import { DashboardHome, DashboardPlaceholder, DashboardShell } from '../features
 import { OperationsPage } from '../features/operations/OperationsPage.jsx'
 import { PublicLanding } from '../features/public-landing/PublicLanding.jsx'
 import { PublicMenuPage } from '../features/public-menu/PublicMenuPage.jsx'
+import { MENU_LANGUAGES } from '../features/public-menu/menuApi.js'
 import { RoomsPage } from '../features/rooms/RoomsPage.jsx'
+
+function PublicMenuLanguageRoute() {
+  const { language } = useParams()
+  const isSupportedLanguage = MENU_LANGUAGES.some((option) => option.code === language)
+
+  if (!isSupportedLanguage) {
+    return <Navigate replace to="/carta/es" />
+  }
+
+  return <PublicMenuPage pathLanguage={language} />
+}
 
 function App({ authService }) {
   return (
@@ -14,6 +26,8 @@ function App({ authService }) {
       <Routes>
         <Route path="/" element={<PublicLanding />} />
         <Route path="/carta" element={<PublicMenuPage />} />
+        <Route path="/carta/:language" element={<PublicMenuLanguageRoute />} />
+        <Route path="/carta/*" element={<Navigate replace to="/carta/es" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<DashboardShell />}>
