@@ -6,6 +6,7 @@ import { DashboardHome, DashboardPlaceholder, DashboardShell } from '../features
 import { OperationsPage } from '../features/operations/OperationsPage.jsx'
 import { PublicLanding } from '../features/public-landing/PublicLanding.jsx'
 import { PublicMenuPage } from '../features/public-menu/PublicMenuPage.jsx'
+import { GuestsPage } from '../features/guests/GuestsPage.jsx'
 import { MENU_LANGUAGES } from '../features/public-menu/menuApi.js'
 import { RoomsPage } from '../features/rooms/RoomsPage.jsx'
 
@@ -34,6 +35,7 @@ function App({ authService }) {
             <Route index element={<DashboardHome />} />
             <Route path="administracion" element={<DashboardPlaceholder title="Administración" />} />
             <Route path="habitaciones" element={<RoomsPage />} />
+            <Route path="huespedes" element={<GuestsPage />} />
             <Route path="operaciones" element={<OperationsPage />} />
             <Route path="mi-jornada" element={<DashboardPlaceholder title="Mi jornada" />} />
           </Route>
