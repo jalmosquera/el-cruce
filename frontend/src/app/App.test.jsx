@@ -99,4 +99,14 @@ describe('App', () => {
     expect(screen.queryByRole('link', { name: 'Habitaciones' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Mi jornada' })).toBeTruthy()
   })
+
+  it('renders the guests dashboard and exposes its navigation entry to a manager', async () => {
+    const adapter = mockRoomsResponse()
+
+    renderApp('/dashboard/huespedes', createAuthService('manager'))
+
+    expect(await screen.findByRole('heading', { name: 'Huéspedes' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Huéspedes' }).getAttribute('aria-current')).toBe('page')
+    expect(adapter.mock.calls[0][0].url).toBe('/guests/')
+  })
 })

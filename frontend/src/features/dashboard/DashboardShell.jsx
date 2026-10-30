@@ -8,11 +8,13 @@ const NAVIGATION_BY_ROLE = {
     { to: '/dashboard/administracion', label: 'Administración' },
     { to: '/dashboard/operaciones', label: 'Operaciones' },
     { to: '/dashboard/habitaciones', label: 'Habitaciones' },
+    { to: '/dashboard/huespedes', label: 'Huéspedes' },
   ],
   manager: [
     { to: '/dashboard', label: 'Resumen', end: true },
     { to: '/dashboard/operaciones', label: 'Operaciones' },
     { to: '/dashboard/habitaciones', label: 'Habitaciones' },
+    { to: '/dashboard/huespedes', label: 'Huéspedes' },
   ],
   employee: [{ to: '/dashboard', label: 'Resumen', end: true }, { to: '/dashboard/mi-jornada', label: 'Mi jornada' }],
 }
