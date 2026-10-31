@@ -355,8 +355,26 @@ def test_development_settings_apply_the_development_defaults(
     assert development.PUBLIC_SITE_URL == "https://elcruce.test"
 
 
+@pytest.fixture
+def production_signing_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
+    with monkeypatch.context() as production_environment:
+        production_environment.setenv(
+            "DJANGO_SECRET_KEY",
+            "production-test-django-signing-secret-that-is-long-and-distinct-01",
+        )
+        production_environment.setenv(
+            "JWT_SIGNING_KEY",
+            "production-test-jwt-signing-secret-that-is-long-and-distinct-02",
+        )
+        importlib.reload(base)
+        yield
+
+    importlib.reload(base)
+
+
 def test_production_settings_require_explicit_allowed_hosts(
     monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
 ) -> None:
     monkeypatch.delenv("DJANGO_ALLOWED_HOSTS", raising=False)
 
@@ -368,6 +386,7 @@ def test_production_settings_require_explicit_allowed_hosts(
 
 def test_production_settings_enable_cookie_security(
     monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
 ) -> None:
     monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "elcruce.example")
     monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
@@ -404,6 +423,7 @@ def test_production_settings_enable_cookie_security(
 
 def test_production_settings_configure_valid_hsts_after_domain_approval(
     monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
 ) -> None:
     monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "api.approved.example")
     monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
@@ -424,6 +444,7 @@ def test_production_settings_configure_valid_hsts_after_domain_approval(
 
 def test_production_settings_reject_preload_without_its_browser_requirements(
     monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
 ) -> None:
     monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "api.approved.example")
     monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
