@@ -46,6 +46,10 @@ function getLocale(language) {
   return MENU_LANGUAGES.find((option) => option.code === language)?.locale ?? 'es-ES'
 }
 
+function getLanguageLabel(language) {
+  return MENU_LANGUAGES.find((option) => option.code === language)?.label ?? 'Español'
+}
+
 function formatPrice(price, language) {
   return new Intl.NumberFormat(getLocale(language), {
     style: 'currency',
@@ -315,7 +319,9 @@ export function PublicMenuPage({ pathLanguage = null }) {
   const currentLanguage = state.status === 'success' ? state.menu.language : requestedLanguage
   const categories = state.status === 'success' ? state.menu.categories : []
   const announcement = state.status === 'success'
-    ? (categories.length === 0 ? 'No hay platos publicados' : 'Carta cargada')
+    ? (categories.length === 0
+      ? `No hay platos publicados en ${getLanguageLabel(currentLanguage)}`
+      : `Carta cargada en ${getLanguageLabel(currentLanguage)}`)
     : null
 
   function retry() {
