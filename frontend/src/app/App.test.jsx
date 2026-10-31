@@ -108,7 +108,9 @@ describe('App', () => {
 
     await screen.findByRole('heading', { name: 'Bienvenido, ana' })
 
-    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow')
+    await waitFor(() => {
+      expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow')
+    })
   })
 
   it('keeps the rooms route reachable for an employee while hiding its navigation entry', async () => {
