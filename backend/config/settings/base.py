@@ -1,8 +1,10 @@
 """Shared Django settings and environment parsing helpers."""
 
 import os
+import re
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -84,6 +86,93 @@ def get_csv_environment_value(name: str, *, default: tuple[str, ...] = ()) -> li
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def get_https_origins(name: str) -> list[str]:
+    """Return explicitly configured HTTPS origins, rejecting unsafe broad values."""
+    origins = get_csv_environment_value(name)
+    if not origins:
+        message = f"The {name} environment variable must contain at least one HTTPS origin."
+        raise ImproperlyConfigured(message)
+
+    for origin in origins:
+        parsed_origin = urlparse(origin)
+        if (
+            parsed_origin.scheme != "https"
+            or not parsed_origin.hostname
+            or parsed_origin.username
+            or parsed_origin.password
+            or parsed_origin.path not in {"", "/"}
+            or parsed_origin.params
+            or parsed_origin.query
+            or parsed_origin.fragment
+            or "*" in parsed_origin.hostname
+        ):
+            message = f"Each {name} value must be a specific HTTPS origin without a path."
+            raise ImproperlyConfigured(message)
+    return origins
+
+
+COOKIE_DOMAIN_PATTERN = re.compile(
+    r"^\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$"
+)
+
+
+def get_cookie_domain(name: str) -> str | None:
+    """Return an optional, shared, syntactically safe cookie domain."""
+    value = os.environ.get(name)
+    if value is None or not value.strip():
+        return None
+
+    domain = value.strip().lower()
+    if not COOKIE_DOMAIN_PATTERN.fullmatch(domain):
+        raise ImproperlyConfigured(
+            f"The {name} environment variable must be a leading-dot registrable "
+            "cookie domain without a scheme, port, path, or wildcard."
+        )
+    return domain
+
+
+def get_database_url_settings() -> dict[str, object]:
+    """Parse a PostgreSQL DATABASE_URL without logging credentials."""
+    database_url = get_environment_value("DATABASE_URL", reject_placeholder=True)
+    parsed_url = urlparse(database_url)
+    if parsed_url.scheme not in {"postgres", "postgresql"}:
+        raise ImproperlyConfigured("DATABASE_URL must use the postgresql scheme.")
+    if not parsed_url.hostname or not parsed_url.path or parsed_url.path == "/":
+        raise ImproperlyConfigured(
+            "DATABASE_URL must include a PostgreSQL host and database name."
+        )
+    if parsed_url.username is None or parsed_url.password is None:
+        raise ImproperlyConfigured(
+            "DATABASE_URL must include PostgreSQL username and password."
+        )
+    try:
+        port = parsed_url.port or 5432
+    except ValueError as error:
+        raise ImproperlyConfigured(
+            "DATABASE_URL must contain a valid PostgreSQL port."
+        ) from error
+    if not 1 <= port <= 65535:
+        raise ImproperlyConfigured("DATABASE_URL must contain a valid PostgreSQL port.")
+
+    query = parse_qs(parsed_url.query, keep_blank_values=True)
+    options = {
+        name: values[-1]
+        for name, values in query.items()
+        if name in {"sslmode", "connect_timeout"} and values[-1]
+    }
+    database_settings: dict[str, object] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": parsed_url.hostname,
+        "PORT": port,
+        "NAME": unquote(parsed_url.path.lstrip("/")),
+        "USER": unquote(parsed_url.username),
+        "PASSWORD": unquote(parsed_url.password),
+    }
+    if options:
+        database_settings["OPTIONS"] = options
+    return database_settings
+
+
 def get_postgresql_database_settings() -> dict[str, str | int]:
     """Build the required PostgreSQL connection configuration from POSTGRES_* values."""
     port_value = get_environment_value("POSTGRES_PORT", reject_placeholder=True)
@@ -133,6 +222,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.postgres",
     "django.contrib.staticfiles",
+    "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "employees",
@@ -147,6 +237,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -203,6 +294,7 @@ SIMPLE_JWT = {
 
 JWT_REFRESH_COOKIE_NAME = "elcruce_refresh"
 JWT_REFRESH_COOKIE_PATH = "/api/auth/"
+JWT_REFRESH_COOKIE_DOMAIN = None
 JWT_REFRESH_COOKIE_SAMESITE = "Lax"
 JWT_REFRESH_COOKIE_SECURE = False
 JWT_REFRESH_COOKIE_MAX_AGE = int(SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())

@@ -59,9 +59,70 @@ uv run python manage.py test --keepdb --noinput
 ```
 
 `EL_CRUCE_ENVIRONMENT=production` forces `DEBUG = False`, requires explicit
-`DJANGO_ALLOWED_HOSTS`, and uses the same mandatory PostgreSQL settings. It
-rejects blank or obvious placeholder configuration; it never falls back to
-SQLite or Django's dummy backend.
+`DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, and
+`DJANGO_CSRF_TRUSTED_ORIGINS`, and rejects blank or obvious placeholder
+configuration. CORS and CSRF values are comma-separated, specific HTTPS origins;
+wildcards, paths, credentials, and HTTP are rejected. CORS is limited to `/api/`
+and allows credentials only for those explicit origins. The application never
+falls back to SQLite or Django's dummy backend.
+
+Production accepts either a complete `DATABASE_URL` with a `postgresql://` (or
+`postgres://`) scheme, host, database, user, and password, or the explicit
+`POSTGRES_*` values above. When `DATABASE_URL` is present it takes precedence;
+supported connection options are `sslmode` and `connect_timeout`. Configuration
+errors never log the connection URL or credentials.
+
+## Production browser authentication topology
+
+Cookie-based browser authentication is supported only when the public frontend
+and API use HTTPS custom subdomains of one approved registrable domain:
+
+- frontend: `https://app.<approved-domain>`;
+- API: `https://api.<approved-domain>`;
+- `DJANGO_COOKIE_DOMAIN=.<approved-domain>`;
+- `DJANGO_CORS_ALLOWED_ORIGINS=https://app.<approved-domain>`;
+- `DJANGO_CSRF_TRUSTED_ORIGINS=https://app.<approved-domain>`.
+
+`DJANGO_COOKIE_DOMAIN` is optional in settings so non-browser or same-host
+deployments can retain host-only cookies. For the two-subdomain browser flow it
+is required: Django applies it consistently to CSRF and session cookies, and the
+refresh-cookie helper applies it to SimpleJWT's HttpOnly refresh cookie. The
+value must be a leading-dot domain without a scheme, port, path, IP address, or
+wildcard. Confirm that the selected value is a registrable domain during the
+approved deployment review.
+
+Cookies remain `Secure; SameSite=Lax`; CSRF remains enforced for refresh and
+logout. CORS never replaces CSRF. Arbitrary Vercel and Railway provider domains
+are cross-site and are **unsupported** for browser cookie authentication, even
+with explicit CORS; configure approved custom domains before enabling it.
+
+## Railway runtime and controlled migrations
+
+`railway.toml` expects Railway to use the backend directory as its service root,
+build the existing Dockerfile, start Gunicorn, and probe `GET /healthz/`.
+`/healthz/` is unauthenticated liveness only: it returns exactly
+`{"status":"ok"}` and does not query or reveal the database, settings, versions,
+or secrets. Gunicorn binds Railway's `PORT` and defaults to two sync workers;
+set `GUNICORN_WORKERS` only after capacity testing.
+
+The runtime image uses Gunicorn rather than Django's development server. It does
+not use WhiteNoise because Django does not serve the Vite static site or Django
+admin assets in this deployment: Vercel serves the complete frontend build. Adding
+WhiteNoise would add a runtime dependency without an asset-serving responsibility.
+
+Migrations are deliberately **not** part of the start command, so concurrent
+restarts cannot race schema changes. An authorized operator must use the Railway
+service's one-off command facility, with the production environment selected:
+
+```sh
+uv run python manage.py migrate --plan
+uv run python manage.py migrate
+```
+
+Before applying, review the plan and verify a tested backup exists. Apply once per
+release, wait for completion, then confirm `/healthz/` and the affected API
+workflow. If a migration fails, stop further deploy attempts and use the approved
+backup/rollback procedure; do not drop tables, volumes, or databases.
 
 ## Backend tests
 
@@ -93,8 +154,10 @@ credentials or a non-disposable PostgreSQL server.
 The browser client keeps the short-lived access token only in memory and sends
 it as `Authorization: Bearer <access-token>`. Refresh tokens are never returned
 in JSON: they use the `elcruce_refresh` HttpOnly cookie, scoped to
-`/api/auth/`, with `SameSite=Lax`. It is marked `Secure` in production; local
-development and tests deliberately omit that flag for HTTP.
+`/api/auth/`, with `SameSite=Lax` locally. Production marks it `Secure` and
+retains `SameSite=Lax` for the approved same-site custom-subdomain topology.
+CSRF and CORS remain restricted to the exact approved frontend HTTPS origin;
+see the production browser authentication topology above before enabling it.
 
 The login and refresh endpoints ignore the `Authorization` header entirely.
 A stale, expired, or malformed Bearer token must never block acquiring or

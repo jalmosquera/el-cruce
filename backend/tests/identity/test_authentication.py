@@ -74,6 +74,16 @@ def test_login_returns_only_access_token_and_sets_httponly_refresh_cookie(
     assert not refresh_cookie["secure"]
 
 
+def test_login_uses_the_configured_refresh_cookie_domain(
+    user: User, settings
+) -> None:
+    settings.JWT_REFRESH_COOKIE_DOMAIN = ".approved.example"
+
+    response = login(APIClient())
+
+    assert response.cookies["elcruce_refresh"]["domain"] == ".approved.example"
+
+
 def test_login_access_token_is_not_signed_with_django_secret_key(user: User) -> None:
     response = login(APIClient())
 

@@ -14,6 +14,7 @@ def set_refresh_cookie(response: HttpResponse, refresh_token: str) -> None:
         secure=settings.JWT_REFRESH_COOKIE_SECURE,
         samesite=settings.JWT_REFRESH_COOKIE_SAMESITE,
         path=settings.JWT_REFRESH_COOKIE_PATH,
+        domain=settings.JWT_REFRESH_COOKIE_DOMAIN,
     )
 
 
@@ -23,4 +24,5 @@ def clear_refresh_cookie(response: HttpResponse) -> None:
         settings.JWT_REFRESH_COOKIE_NAME,
         path=settings.JWT_REFRESH_COOKIE_PATH,
         samesite=settings.JWT_REFRESH_COOKIE_SAMESITE,
+        domain=settings.JWT_REFRESH_COOKIE_DOMAIN,
     )
