@@ -19,6 +19,7 @@ set -gx DJANGO_SECRET_KEY "a-unique-non-placeholder-development-secret"
 set -gx JWT_SIGNING_KEY "a-distinct-non-placeholder-jwt-signing-key"
 set -gx DJANGO_DEBUG true
 set -gx DJANGO_ALLOWED_HOSTS "localhost,127.0.0.1"
+set -gx PUBLIC_SITE_URL "https://elcruce.test"
 set -gx POSTGRES_HOST "127.0.0.1"
 set -gx POSTGRES_PORT 5432
 set -gx POSTGRES_DB "elcruce_dev"
@@ -60,7 +61,7 @@ uv run python manage.py test --keepdb --noinput
 
 `EL_CRUCE_ENVIRONMENT=production` forces `DEBUG = False`, requires explicit
 `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, and
-`DJANGO_CSRF_TRUSTED_ORIGINS`, and rejects blank or obvious placeholder
+`DJANGO_CSRF_TRUSTED_ORIGINS`, and `PUBLIC_SITE_URL`, and rejects blank or obvious placeholder
 configuration. CORS and CSRF values are comma-separated, specific HTTPS origins;
 wildcards, paths, credentials, and HTTP are rejected. CORS is limited to `/api/`
 and allows credentials only for those explicit origins. The application never
@@ -148,6 +149,21 @@ The test configuration collects `tests/`, runs branch coverage for `config`,
 fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
+
+## Permanent QR public origin
+
+QR downloads encode an absolute URL in the form
+`<PUBLIC_SITE_URL>/q/<identifier>/`. `PUBLIC_SITE_URL` is a single HTTPS public
+origin: it cannot contain credentials, a path (other than an optional trailing
+slash), query, fragment, or wildcard. The backend normalizes an optional
+trailing slash before generating a payload.
+
+Development defaults to the deterministic reserved origin `https://elcruce.test`
+when the variable is absent; tests always use that origin. Production has no
+fallback: Django refuses to start without a configured approved public origin,
+preventing the generation of unusable or host-dependent QR codes. Set this to
+the approved public backend origin that serves `/q/<identifier>/`; do not
+substitute a provider URL or invent a domain before deployment approval.
 
 ## Authentication API contract
 
@@ -824,10 +840,10 @@ guest datum, or target URL.
 
 ### Permanence and redirect security
 
-Every generated QR contains **only** the relative stable path
-`/q/{identifier}/`; it never contains guest data, user data, a direct mutable
-content URL, or a third-party URL. A successful public request responds with
-`302 Found` to the persisted local target. A temporary redirect is intentional:
+Every generated QR contains the absolute stable URL
+`<PUBLIC_SITE_URL>/q/{identifier}/`; it never contains guest data, user data, a
+direct mutable content URL, or a third-party URL. A successful public request
+responds with `302 Found` to the persisted local target. A temporary redirect is intentional:
 the stable QR path remains permanent while staff can change the target without
 clients permanently caching the former destination. Unknown and inactive codes
 return `404`.

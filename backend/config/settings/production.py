@@ -11,6 +11,7 @@ from .base import (
     get_database_url_settings,
     get_https_origins,
     get_postgresql_database_settings,
+    get_public_site_url,
 )
 
 DEBUG = False
@@ -27,6 +28,9 @@ DATABASES = {
         else get_postgresql_database_settings()
     )
 }
+
+# Permanent QR codes must resolve independently of the API host that renders them.
+PUBLIC_SITE_URL = get_public_site_url("PUBLIC_SITE_URL")
 
 CORS_ALLOWED_ORIGINS = get_https_origins("DJANGO_CORS_ALLOWED_ORIGINS")
 CORS_ALLOW_CREDENTIALS = True

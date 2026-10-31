@@ -16,3 +16,6 @@ DATABASES = {"default": get_postgresql_database_settings()}
 DATABASES["default"]["TEST"] = {
     "NAME": get_postgresql_test_database_name(DATABASES["default"]["NAME"]),
 }
+
+# Tests must never rely on the request host or an unconfigured public domain.
+PUBLIC_SITE_URL = "https://elcruce.test"

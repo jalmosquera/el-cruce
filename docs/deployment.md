@@ -22,7 +22,7 @@ En la configuración de build de Vercel, definí estos valores públicos:
 
 ```text
 VITE_API_BASE_URL=https://api.<approved-domain>/api
-PUBLIC_SITE_URL=https://app.<approved-domain>
+PUBLIC_SITE_URL=https://api.<approved-domain>
 ```
 
 `VITE_API_BASE_URL` termina dentro del bundle y no puede incluir secretos,
@@ -54,6 +54,7 @@ DJANGO_ALLOWED_HOSTS=api.<approved-domain>
 DJANGO_CORS_ALLOWED_ORIGINS=https://app.<approved-domain>
 DJANGO_CSRF_TRUSTED_ORIGINS=https://app.<approved-domain>
 DJANGO_COOKIE_DOMAIN=.<approved-domain>
+PUBLIC_SITE_URL=https://app.<approved-domain>
 DATABASE_URL=<referencia segura a PostgreSQL Railway o URL PostgreSQL completa>
 ```
 
@@ -61,6 +62,13 @@ Como alternativa a `DATABASE_URL`, se pueden proveer `POSTGRES_HOST`,
 `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER` y `POSTGRES_PASSWORD`. Las listas
 de CORS y CSRF admiten varios orígenes separados por comas, pero sólo HTTPS
 explícito: no se permiten `*`, paths ni credenciales.
+
+`PUBLIC_SITE_URL` es el único origen HTTPS público que se codifica en las
+exportaciones QR permanentes como `https://…/q/<identifier>/`. Debe ser el
+origen aprobado que sirve esa ruta pública y no puede contener credenciales,
+path (salvo una barra final opcional), query, fragmento ni comodines. En
+producción no tiene valor por defecto: Django no inicia si falta o es inválido.
+No inventes ni configures un dominio real antes de su aprobación.
 
 ## Cookies, CSRF y autenticación entre orígenes
 
