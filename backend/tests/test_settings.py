@@ -209,6 +209,35 @@ def test_get_https_origins_rejects_broad_or_non_origin_values(
         base.get_https_origins("ORIGINS")
 
 
+def test_get_public_site_url_normalizes_one_https_origin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PUBLIC_SITE_URL", "https://public.example/")
+
+    assert base.get_public_site_url("PUBLIC_SITE_URL") == "https://public.example"
+
+
+@pytest.mark.parametrize(
+    "public_site_url",
+    [
+        "",
+        "http://public.example",
+        "https://user:password@public.example",
+        "https://public.example/carta",
+        "https://public.example?campaign=qr",
+        "https://public.example#menu",
+        "https://public.example:invalid",
+    ],
+)
+def test_get_public_site_url_rejects_non_origin_or_insecure_values(
+    monkeypatch: pytest.MonkeyPatch, public_site_url: str
+) -> None:
+    monkeypatch.setenv("PUBLIC_SITE_URL", public_site_url)
+
+    with pytest.raises(ImproperlyConfigured, match="PUBLIC_SITE_URL"):
+        base.get_public_site_url("PUBLIC_SITE_URL")
+
+
 def test_get_cookie_domain_returns_an_optional_shared_domain(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -262,6 +291,7 @@ def test_test_settings_use_a_different_postgresql_database_name() -> None:
     )
 
     assert test.DEBUG is False
+    assert test.PUBLIC_SITE_URL == "https://elcruce.test"
     assert database["ENGINE"] == "django.db.backends.postgresql"
     assert database["TEST"]["NAME"] == expected_test_database_name
     assert database["TEST"]["NAME"] != application_database_name
@@ -285,6 +315,7 @@ def test_development_settings_apply_the_development_defaults(
 ) -> None:
     monkeypatch.delenv("DJANGO_DEBUG", raising=False)
     monkeypatch.delenv("DJANGO_ALLOWED_HOSTS", raising=False)
+    monkeypatch.delenv("PUBLIC_SITE_URL", raising=False)
 
     from config.settings import development
 
@@ -292,6 +323,7 @@ def test_development_settings_apply_the_development_defaults(
 
     assert development.DEBUG is True
     assert development.ALLOWED_HOSTS == ["localhost", "127.0.0.1"]
+    assert development.PUBLIC_SITE_URL == "https://elcruce.test"
 
 
 def test_production_settings_require_explicit_allowed_hosts(
@@ -312,6 +344,7 @@ def test_production_settings_enable_cookie_security(
     monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
     monkeypatch.setenv("DJANGO_CSRF_TRUSTED_ORIGINS", "https://app.approved.example")
     monkeypatch.setenv("DJANGO_COOKIE_DOMAIN", ".approved.example")
+    monkeypatch.setenv("PUBLIC_SITE_URL", "https://public.approved.example")
 
     from config.settings import production
 
@@ -333,6 +366,30 @@ def test_production_settings_enable_cookie_security(
     assert production.JWT_REFRESH_COOKIE_SAMESITE == "Lax"
     assert production.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https")
     assert production.SECURE_HSTS_SECONDS == 31_536_000
+
+
+def test_production_settings_fail_closed_when_public_site_url_is_missing() -> None:
+    environment = {
+        "DJANGO_SECRET_KEY": "test-only-django-secret-not-for-production",
+        "JWT_SIGNING_KEY": "test-only-jwt-secret-not-for-production",
+        "DATABASE_URL": "postgresql://application:secure-password@db.example/elcruce",
+        "DJANGO_ALLOWED_HOSTS": "api.approved.example",
+        "DJANGO_CORS_ALLOWED_ORIGINS": "https://app.approved.example",
+        "DJANGO_CSRF_TRUSTED_ORIGINS": "https://app.approved.example",
+        "PATH": os.environ["PATH"],
+    }
+
+    result = subprocess.run(
+        [sys.executable, "-c", "import config.settings.production"],
+        capture_output=True,
+        check=False,
+        cwd=base.BASE_DIR,
+        env=environment,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "The PUBLIC_SITE_URL environment variable must be set." in result.stderr
 
 
 def test_root_url_configuration_registers_approved_domain_routes() -> None:

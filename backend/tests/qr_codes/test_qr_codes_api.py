@@ -1,11 +1,16 @@
 """PostgreSQL-backed tests for permanent QR-code behavior."""
 
 import re
+import xml.etree.ElementTree as element_tree
+from io import BytesIO
 
 import pytest
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import IntegrityError, transaction
+from django.test import override_settings
+from PIL import Image
 from rest_framework.test import APIClient
+import zxingcpp
 
 from identity.models import User, UserRole
 from qr_codes.models import QrCode
@@ -16,12 +21,72 @@ from qr_codes.services import (
     QR_PNG_SCALE,
     generate_qr_code_bytes,
     stable_qr_path,
+    stable_qr_url,
 )
 
 pytestmark = pytest.mark.django_db
 
 QR_CODES_URL = "/api/qr-codes/"
 PASSWORD = "correct-horse-battery-staple"
+SVG_NAMESPACE = "{http://www.w3.org/2000/svg}"
+SVG_RASTER_SCALE = 10
+
+
+def rasterize_segno_svg(svg_bytes: bytes) -> memoryview:
+    """Rasterize Segno's module-aligned SVG paths for independent QR decoding."""
+    root = element_tree.fromstring(svg_bytes)
+    width = int(root.attrib["width"])
+    height = int(root.attrib["height"])
+    pixels = bytearray([255]) * (width * SVG_RASTER_SCALE * height * SVG_RASTER_SCALE)
+
+    def paint_modules(start_x: float, center_y: float, length: float) -> None:
+        left = round(start_x * SVG_RASTER_SCALE)
+        right = round((start_x + length) * SVG_RASTER_SCALE)
+        top = round((center_y - 0.5) * SVG_RASTER_SCALE)
+        bottom = round((center_y + 0.5) * SVG_RASTER_SCALE)
+        raster_width = width * SVG_RASTER_SCALE
+        for row in range(top, bottom):
+            pixels[row * raster_width + left : row * raster_width + right] = b"\x00" * (
+                right - left
+            )
+
+    qr_path = root.find(f"{SVG_NAMESPACE}path[@class='qrline']")
+    assert qr_path is not None
+    tokens = re.findall(r"[MmHhVv]|-?\d+(?:\.\d+)?", qr_path.attrib["d"])
+    position = 0
+    command = ""
+    x = y = 0.0
+    while position < len(tokens):
+        if tokens[position].isalpha():
+            command = tokens[position]
+            position += 1
+        if command in {"M", "m"}:
+            next_x, next_y = map(float, tokens[position : position + 2])
+            x, y = (next_x, next_y) if command == "M" else (x + next_x, y + next_y)
+            position += 2
+        elif command in {"H", "h"}:
+            length = float(tokens[position])
+            if command == "H":
+                length -= x
+            paint_modules(x, y, length)
+            x += length
+            position += 1
+        elif command in {"V", "v"}:
+            y = float(tokens[position]) if command == "V" else y + float(tokens[position])
+            position += 1
+        else:
+            raise AssertionError(f"Unsupported SVG path command: {command}")
+    return memoryview(pixels).cast(
+        "B", shape=(height * SVG_RASTER_SCALE, width * SVG_RASTER_SCALE)
+    )
+
+
+def decode_qr_payload(image: Image.Image | memoryview) -> str:
+    decoded_barcodes = zxingcpp.read_barcodes(
+        image, formats=zxingcpp.BarcodeFormat.QRCode, is_pure=True
+    )
+    assert len(decoded_barcodes) == 1
+    return decoded_barcodes[0].text
 
 
 @pytest.fixture
@@ -176,18 +241,44 @@ def test_protected_downloads_return_correct_type_and_generated_bytes(
     assert signature in response.content
 
 
-def test_qr_generation_is_deterministic_and_encodes_only_the_stable_path(qr_code: QrCode) -> None:
+@pytest.mark.parametrize("image_format", ("svg", "png"))
+def test_downloaded_qr_exports_decode_to_the_absolute_public_redirect_url(
+    manager: User, qr_code: QrCode, image_format: str
+) -> None:
+    response = authenticated_client(manager).get(
+        f"{QR_CODES_URL}{qr_code.pk}/download/{image_format}/"
+    )
+
+    assert response.status_code == 200
+    image = (
+        rasterize_segno_svg(response.content)
+        if image_format == "svg"
+        else Image.open(BytesIO(response.content))
+    )
+    assert decode_qr_payload(image) == f"https://elcruce.test/q/{qr_code.identifier}/"
+
+
+def test_qr_generation_is_deterministic_and_preserves_rendering_configuration(
+    qr_code: QrCode,
+) -> None:
     svg_first = generate_qr_code_bytes(qr_code.identifier, "svg")
     svg_second = generate_qr_code_bytes(qr_code.identifier, "svg")
     png_first = generate_qr_code_bytes(qr_code.identifier, "png")
     png_second = generate_qr_code_bytes(qr_code.identifier, "png")
 
     assert stable_qr_path(qr_code.identifier) == f"/q/{qr_code.identifier}/"
+    assert stable_qr_url(qr_code.identifier) == f"https://elcruce.test/q/{qr_code.identifier}/"
     assert svg_first == svg_second
     assert png_first == png_second
-    assert stable_qr_path(qr_code.identifier).encode() not in svg_first
     assert QR_ERROR_CORRECTION == "h"
     assert QR_BORDER_MODULES >= 4
     assert QR_PNG_SCALE == 10
     assert QR_DARK_COLOR in svg_first.decode()
     assert 'fill="#fff"' in svg_first.decode()
+
+
+def test_qr_generation_fails_closed_without_a_public_site_url(qr_code: QrCode) -> None:
+    with override_settings(PUBLIC_SITE_URL=None), pytest.raises(
+        ImproperlyConfigured, match="PUBLIC_SITE_URL"
+    ):
+        generate_qr_code_bytes(qr_code.identifier, "svg")
