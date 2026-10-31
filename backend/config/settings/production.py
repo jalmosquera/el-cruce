@@ -9,12 +9,16 @@ from .base import (
     get_csv_environment_value,
     get_cookie_domain,
     get_database_url_settings,
+    get_boolean_environment_value,
     get_https_origins,
+    get_nonnegative_integer_environment_value,
     get_postgresql_database_settings,
     get_public_site_url,
+    validate_production_secrets,
 )
 
 DEBUG = False
+validate_production_secrets()
 ALLOWED_HOSTS = get_csv_environment_value("DJANGO_ALLOWED_HOSTS")
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured(
@@ -49,9 +53,26 @@ SESSION_COOKIE_DOMAIN = DJANGO_COOKIE_DOMAIN
 JWT_REFRESH_COOKIE_DOMAIN = DJANGO_COOKIE_DOMAIN
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31_536_000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_HSTS_PRELOAD = False
+# Keep HSTS disabled until an approved custom domain is serving HTTPS reliably.
+SECURE_HSTS_SECONDS = get_nonnegative_integer_environment_value(
+    "DJANGO_HSTS_SECONDS", default=0
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = get_boolean_environment_value(
+    "DJANGO_HSTS_INCLUDE_SUBDOMAINS", default=False
+)
+SECURE_HSTS_PRELOAD = get_boolean_environment_value("DJANGO_HSTS_PRELOAD", default=False)
+if SECURE_HSTS_PRELOAD and (
+    not SECURE_HSTS_INCLUDE_SUBDOMAINS or SECURE_HSTS_SECONDS < 31_536_000
+):
+    raise ImproperlyConfigured(
+        "DJANGO_HSTS_PRELOAD requires include subdomains and at least 31536000 seconds."
+    )
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 X_FRAME_OPTIONS = "DENY"
+
+# The production API is machine-consumed and must never negotiate HTML responses.
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # noqa: F405 - Imported from the base settings module.
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+}
