@@ -10,6 +10,8 @@ const EMPTY_FORM = { room: '', guest: '', check_in: '', check_out: '', guest_cou
 const OCCUPYING_STATUSES = new Set(['pending', 'confirmed', 'checked_in'])
 const STATUS_ACTION_LABELS = { cancelled: 'Cancelar' }
 const FIELD_CLASS = 'mt-2 min-h-11 w-full rounded-md border border-cruce-line bg-cruce-paper px-3 text-cruce-ink shadow-xs outline-none focus:border-cruce-focus focus:ring-2 focus:ring-cruce-focus disabled:cursor-not-allowed disabled:opacity-60'
+const DEFAULT_ROOMS_SERVICE = { listRooms }
+const DEFAULT_GUESTS_SERVICE = { listGuests }
 
 function today() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' }) }
 function addDays(date, amount) { const value = new Date(`${date}T12:00:00Z`); value.setUTCDate(value.getUTCDate() + amount); return value.toISOString().slice(0, 10) }
@@ -21,7 +23,7 @@ function badgeClass(status) {
   return 'border-cruce-amber/60 bg-cruce-amber/20 text-cruce-amber-dark'
 }
 
-export function ReservationsPage({ reservationsService = defaultService, roomsService = { listRooms }, guestsService = { listGuests } }) {
+export function ReservationsPage({ reservationsService = defaultService, roomsService = DEFAULT_ROOMS_SERVICE, guestsService = DEFAULT_GUESTS_SERVICE }) {
   const [reservations, setReservations] = useState([])
   const [rooms, setRooms] = useState([])
   const [guests, setGuests] = useState([])

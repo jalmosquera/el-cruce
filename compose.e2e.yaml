@@ -1,0 +1,71 @@
+name: elcruce-e2e
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: elcruce_e2e
+      POSTGRES_USER: elcruce_e2e
+      POSTGRES_PASSWORD: e2e-postgres-password-not-for-production
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    networks:
+      - e2e
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      EL_CRUCE_ENVIRONMENT: development
+      EL_CRUCE_E2E: "1"
+      DJANGO_SECRET_KEY: e2e-django-secret-key-not-for-production
+      JWT_SIGNING_KEY: e2e-jwt-signing-key-not-for-production-distinct
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,backend
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: elcruce_e2e
+      POSTGRES_USER: elcruce_e2e
+      POSTGRES_PASSWORD: e2e-postgres-password-not-for-production
+    command: >-
+      sh -c "uv run --locked python manage.py migrate --noinput
+      && uv run --locked python manage.py seed_e2e_data
+      && uv run --locked python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "uv run --locked python manage.py shell -c 'from django.db import connection; connection.ensure_connection()'"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+    networks:
+      - e2e
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: /api
+      VITE_API_PROXY_TARGET: http://backend:8000
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "127.0.0.1:9001:9000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:9000').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+    networks:
+      - e2e
+
+networks:
+  e2e:
