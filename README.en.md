@@ -122,6 +122,17 @@ npm run build
 npm run verify:prerender
 ```
 
+For the isolated browser suite, install Chromium once and build before running E2E:
+
+```fish
+cd frontend
+npm run e2e:install
+npm run build
+npm run e2e
+```
+
+The suite always uses the fixed `elcruce-e2e` project from `compose.e2e.yaml`, temporary PostgreSQL storage, and deterministic fictitious data; it cannot override the URL or Compose file, or reuse a server. It never uses preview data or the normal local Compose data. See [`docs/development.md`](docs/development.md) for Docker requirements and interactive execution.
+
 The configuration enforces at least 80% coverage independently for the backend and frontend. See [`docs/development.md`](docs/development.md) for lint commands and [`backend/README.md`](backend/README.md) for safe backend test setup.
 
 ## Public static files and SEO
