@@ -1,8 +1,20 @@
 """Root URL configuration."""
 
 from django.urls import include, path
+from django.http import JsonResponse
+from django.views import View
+
+
+class HealthcheckView(View):
+    """Return liveness only; do not disclose settings or database state."""
+
+    http_method_names = ["get", "head", "options"]
+
+    def get(self, request):
+        return JsonResponse({"status": "ok"})
 
 urlpatterns = [
+    path("healthz/", HealthcheckView.as_view(), name="healthcheck"),
     path("api/auth/", include("identity.urls")),
     path("api/identity/", include("identity.directory_urls")),
     path("api/guests/", include("guests.urls")),

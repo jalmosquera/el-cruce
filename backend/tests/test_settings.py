@@ -149,6 +149,96 @@ def test_get_postgresql_database_settings_returns_validated_connection_values(
     }
 
 
+def test_get_database_url_settings_returns_validated_postgresql_connection_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql://application:secure-password@db.example:5432/elcruce?sslmode=require",
+    )
+
+    assert base.get_database_url_settings() == {
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": "db.example",
+        "PORT": 5432,
+        "NAME": "elcruce",
+        "USER": "application",
+        "PASSWORD": "secure-password",
+        "OPTIONS": {"sslmode": "require"},
+    }
+
+
+@pytest.mark.parametrize(
+    "database_url",
+    [
+        "mysql://application:secure-password@db.example/elcruce",
+        "postgresql://application@db.example/elcruce",
+        "postgresql://application:secure-password@db.example/",
+    ],
+)
+def test_get_database_url_settings_rejects_invalid_connection_urls(
+    monkeypatch: pytest.MonkeyPatch, database_url: str
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", database_url)
+
+    with pytest.raises(ImproperlyConfigured, match="DATABASE_URL"):
+        base.get_database_url_settings()
+
+
+def test_get_https_origins_requires_specific_https_origins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ORIGINS", "https://frontend.example,https://admin.example")
+
+    assert base.get_https_origins("ORIGINS") == [
+        "https://frontend.example",
+        "https://admin.example",
+    ]
+
+
+@pytest.mark.parametrize(
+    "origins",
+    ["", "http://frontend.example", "https://*.example", "https://frontend.example/path"],
+)
+def test_get_https_origins_rejects_broad_or_non_origin_values(
+    monkeypatch: pytest.MonkeyPatch, origins: str
+) -> None:
+    monkeypatch.setenv("ORIGINS", origins)
+
+    with pytest.raises(ImproperlyConfigured, match="HTTPS origin"):
+        base.get_https_origins("ORIGINS")
+
+
+def test_get_cookie_domain_returns_an_optional_shared_domain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DJANGO_COOKIE_DOMAIN", ".approved.example")
+
+    assert base.get_cookie_domain("DJANGO_COOKIE_DOMAIN") == ".approved.example"
+
+
+@pytest.mark.parametrize(
+    "cookie_domain",
+    [
+        "approved.example",
+        "https://approved.example",
+        ".api.approved.example/path",
+        ".approved.example:443",
+        ".approved.example/",
+        ".*.approved.example",
+        ".localhost",
+        ".127.0.0.1",
+    ],
+)
+def test_get_cookie_domain_rejects_unsafe_forms(
+    monkeypatch: pytest.MonkeyPatch, cookie_domain: str
+) -> None:
+    monkeypatch.setenv("DJANGO_COOKIE_DOMAIN", cookie_domain)
+
+    with pytest.raises(ImproperlyConfigured, match="cookie domain"):
+        base.get_cookie_domain("DJANGO_COOKIE_DOMAIN")
+
+
 def test_get_postgresql_test_database_name_is_distinct_from_application_database(
 ) -> None:
     assert base.get_postgresql_test_database_name("elcruce_infra05_source") == (
@@ -219,6 +309,9 @@ def test_production_settings_enable_cookie_security(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "elcruce.example")
+    monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
+    monkeypatch.setenv("DJANGO_CSRF_TRUSTED_ORIGINS", "https://app.approved.example")
+    monkeypatch.setenv("DJANGO_COOKIE_DOMAIN", ".approved.example")
 
     from config.settings import production
 
@@ -229,12 +322,24 @@ def test_production_settings_enable_cookie_security(
     assert production.CSRF_COOKIE_SECURE is True
     assert production.SESSION_COOKIE_SECURE is True
     assert production.JWT_REFRESH_COOKIE_SECURE is True
+    assert production.CORS_ALLOWED_ORIGINS == ["https://app.approved.example"]
+    assert production.CORS_ALLOW_CREDENTIALS is True
+    assert production.CSRF_TRUSTED_ORIGINS == ["https://app.approved.example"]
+    assert production.CSRF_COOKIE_DOMAIN == ".approved.example"
+    assert production.SESSION_COOKIE_DOMAIN == ".approved.example"
+    assert production.JWT_REFRESH_COOKIE_DOMAIN == ".approved.example"
+    assert production.CSRF_COOKIE_SAMESITE == "Lax"
+    assert production.SESSION_COOKIE_SAMESITE == "Lax"
+    assert production.JWT_REFRESH_COOKIE_SAMESITE == "Lax"
+    assert production.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https")
+    assert production.SECURE_HSTS_SECONDS == 31_536_000
 
 
 def test_root_url_configuration_registers_approved_domain_routes() -> None:
     from config.urls import urlpatterns
 
     assert [str(pattern.pattern) for pattern in urlpatterns] == [
+        "healthz/",
         "api/auth/",
         "api/identity/",
         "api/guests/",

@@ -26,7 +26,7 @@ Not yet integrated into `dev`:
 
 - Reservations.
 - QR codes.
-- Publishing and production configuration strategy.
+- Vercel/Railway production-readiness configuration (without resources or deployment).
 
 The project scope includes reservations, QR codes, and manageable content, but only the functionality listed above should be treated as available.
 
@@ -152,7 +152,7 @@ npm run verify:prerender
 
 ## Current limitations
 
-- Production configuration, deployment, and the publishing strategy are pending approval.
+- The Vercel/Railway topology is configured in the repository, but no resources, domains, secrets, deployments, backups, or restoration tests have been approved or performed.
 - Internal reservations are integrated: the API exposes authentication, rooms, menu, employees and shifts, guests, and reservations. Permanent QR codes are still pending integration; their PR is under review.
 - The public menu UI lives on the current working branch and is pending review and merge.
 - Do not use real personal data, credentials, or secrets in the repository.

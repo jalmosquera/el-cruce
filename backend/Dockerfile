@@ -24,4 +24,4 @@ RUN uv sync --frozen
 
 EXPOSE 8000
 
-CMD ["uv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["uv", "run", "gunicorn", "--config", "gunicorn.conf.py", "config.wsgi:application"]
