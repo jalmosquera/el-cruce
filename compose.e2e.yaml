@@ -53,6 +53,7 @@ services:
     environment:
       VITE_API_BASE_URL: /api
       VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_PUBLIC_SITE_URL: https://elcruce.test
     command: npm run dev -- --host 0.0.0.0
     ports:
       - "127.0.0.1:9001:9000"
