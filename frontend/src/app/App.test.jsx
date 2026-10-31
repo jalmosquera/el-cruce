@@ -145,6 +145,50 @@ describe('App', () => {
     expect(screen.queryByRole('link', { name: 'Carta' })).toBeNull()
   })
 
+  it('renders QR management and navigation for managers without a frontend route role block', async () => {
+    const adapter = mockRoomsResponse([])
+    renderApp('/dashboard/codigos-qr', createAuthService('manager'))
+    expect(await screen.findByRole('heading', { name: 'Códigos QR' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Códigos QR' }).getAttribute('aria-current')).toBe('page')
+    await waitFor(() => expect(adapter.mock.calls[0][0].url).toBe('/qr-codes/'))
+  })
+
+  it('portals QR previews outside the inert dashboard shell and restores shell controls after Escape', async () => {
+    mockRoomsResponse([{ id: 4, identifier: 'stable-identifier', name: 'Carta terraza', target_path: '/carta', is_active: true }])
+    renderApp('/dashboard/codigos-qr', createAuthService('manager'))
+
+    await screen.findByRole('heading', { name: 'Códigos QR' })
+    const dashboardShell = document.querySelector('[data-dashboard-shell]')
+    const logoutButton = screen.getByRole('button', { name: 'Cerrar sesión' })
+    const previewTrigger = await screen.findByRole('button', { name: 'Vista previa de Carta terraza' })
+
+    fireEvent.click(previewTrigger)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Vista previa: Carta terraza' })
+    expect(dashboardShell.hasAttribute('inert')).toBe(true)
+    expect(logoutButton.closest('[inert]')).toBe(dashboardShell)
+    expect(dialog.closest('[data-dashboard-shell]')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cerrar' }))
+
+    fireEvent.keyDown(document.activeElement, { key: 'Tab' })
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Descargar SVG' }))
+    fireEvent.keyDown(document.activeElement, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cerrar' }))
+
+    fireEvent.keyDown(dialog, { key: 'Escape' })
+
+    await waitFor(() => expect(dashboardShell.hasAttribute('inert')).toBe(false))
+    expect(logoutButton.closest('[inert]')).toBeNull()
+    expect(document.activeElement).toBe(previewTrigger)
+  })
+
+  it('shows QR management navigation to administrators', async () => {
+    mockRoomsResponse([])
+    renderApp('/dashboard', createAuthService('administrator'))
+    expect(await screen.findByRole('heading', { name: 'Bienvenido, ana' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Códigos QR' })).toBeTruthy()
+  })
+
   it('marks the authenticated dashboard as non-indexable at runtime', async () => {
     renderApp('/dashboard', createAuthService('administrator'))
 
