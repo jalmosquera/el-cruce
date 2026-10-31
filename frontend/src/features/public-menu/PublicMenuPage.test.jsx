@@ -280,7 +280,7 @@ describe('PublicMenuPage', () => {
     expect(screen.queryByText(/^Original:/)).toBeNull()
   })
 
-  it('updates the URL, content and announced language when another language is selected', async () => {
+  it('announces the selected localized language after switching the menu language', async () => {
     fetchPublicMenu.mockImplementation((language) => Promise.resolve(
       language === 'en' ? ENGLISH_MENU : SPANISH_MENU,
     ))
@@ -300,6 +300,7 @@ describe('PublicMenuPage', () => {
     expect(screen.getByRole('link', { name: 'English' }).getAttribute('aria-current')).toBe('true')
     expect(screen.getByRole('link', { name: 'Español' }).getAttribute('aria-current')).toBeNull()
     expect(fetchPublicMenu).toHaveBeenLastCalledWith('en', expect.objectContaining({ signal: expect.any(AbortSignal) }))
+    expect(screen.getByRole('status').textContent).toBe('Carta cargada en English')
   })
 
   it('restores the menu and language through browser history navigation', async () => {
@@ -374,7 +375,7 @@ describe('PublicMenuPage', () => {
     expect(status.parentElement.getAttribute('aria-live')).toBe('polite')
   })
 
-  it('announces a successful load inside the live region', async () => {
+  it('announces the selected language after a successful initial load inside the live region', async () => {
     fetchPublicMenu.mockResolvedValue(SPANISH_MENU)
 
     renderPage()
@@ -383,7 +384,7 @@ describe('PublicMenuPage', () => {
 
     const status = screen.getByRole('status')
 
-    expect(status.textContent).toBe('Carta cargada')
+    expect(status.textContent).toBe('Carta cargada en Español')
     expect(status.classList.contains('sr-only')).toBe(true)
     expect(status.parentElement.getAttribute('aria-live')).toBe('polite')
   })
@@ -397,7 +398,7 @@ describe('PublicMenuPage', () => {
 
     const status = screen.getByRole('status')
 
-    expect(status.textContent).toBe('No hay platos publicados')
+    expect(status.textContent).toBe('No hay platos publicados en Español')
     expect(status.classList.contains('sr-only')).toBe(true)
     expect(status.parentElement.getAttribute('aria-live')).toBe('polite')
   })
