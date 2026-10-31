@@ -111,6 +111,36 @@ def get_https_origins(name: str) -> list[str]:
     return origins
 
 
+def get_public_site_url(name: str, *, default: str | None = None) -> str:
+    """Return one normalized HTTPS public origin for permanent QR payloads."""
+    value = get_environment_value(name, default=default, reject_placeholder=True)
+    parsed_url = urlparse(value)
+    try:
+        port = parsed_url.port
+    except ValueError as error:
+        raise ImproperlyConfigured(
+            f"The {name} environment variable must contain a valid HTTPS origin."
+        ) from error
+
+    if (
+        parsed_url.scheme != "https"
+        or not parsed_url.hostname
+        or parsed_url.username
+        or parsed_url.password
+        or parsed_url.path not in {"", "/"}
+        or parsed_url.params
+        or parsed_url.query
+        or parsed_url.fragment
+        or "*" in parsed_url.hostname
+        or (port is not None and not 1 <= port <= 65535)
+    ):
+        raise ImproperlyConfigured(
+            f"The {name} environment variable must be a specific HTTPS origin without "
+            "credentials, a path, query, or fragment."
+        )
+    return f"https://{parsed_url.netloc}"
+
+
 COOKIE_DOMAIN_PATTERN = re.compile(
     r"^\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$"
 )
