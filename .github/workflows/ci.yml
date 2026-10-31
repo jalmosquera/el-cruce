@@ -4,6 +4,13 @@ on:
   pull_request:
     branches:
       - dev
+  push:
+    branches:
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -94,5 +101,11 @@ jobs:
       - name: Test frontend with coverage
         run: npm run coverage
 
+      - name: Test prerender generation
+        run: npm run test:prerender
+
       - name: Build frontend for production
         run: npm run build
+
+      - name: Verify prerendered artifacts
+        run: npm run verify:prerender
