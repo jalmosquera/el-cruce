@@ -393,6 +393,9 @@ def test_production_settings_enable_cookie_security(
     monkeypatch.setenv("DJANGO_CSRF_TRUSTED_ORIGINS", "https://app.approved.example")
     monkeypatch.setenv("DJANGO_COOKIE_DOMAIN", ".approved.example")
     monkeypatch.setenv("PUBLIC_SITE_URL", "https://public.approved.example")
+    monkeypatch.delenv("DJANGO_HSTS_SECONDS", raising=False)
+    monkeypatch.delenv("DJANGO_HSTS_INCLUDE_SUBDOMAINS", raising=False)
+    monkeypatch.delenv("DJANGO_HSTS_PRELOAD", raising=False)
 
     from config.settings import production
 
