@@ -33,4 +33,10 @@ export default defineConfig(
       globals: globals.node,
     },
   },
+  {
+    files: ['src/**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 )
