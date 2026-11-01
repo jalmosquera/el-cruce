@@ -29,7 +29,7 @@ function ErrorSummary({ errors, formRef }) {
   if (!entries.length) return null
 
   return (
-    <div className="rounded-md border border-red-300 bg-red-50 p-3 text-red-900" role="alert" tabIndex="-1" ref={formRef}>
+    <div className="rounded-md border border-destructive/35 bg-destructive-soft p-3 text-destructive" role="alert" tabIndex="-1" ref={formRef}>
       <p className="font-semibold">Revisá los datos del formulario:</p>
       <ul className="mt-1 list-disc pl-5">
         {entries.flatMap(([field, messages]) => (Array.isArray(messages) ? messages : [messages]).map((message) => (
@@ -47,13 +47,13 @@ function ConfirmDialog({ itemName, isDeleting, onCancel, onConfirm, triggerEleme
   useConfirmationDialog({ dialogRef, initialFocusRef: cancelButtonRef, isDeleting, isOpen: true, onClose: onCancel, triggerElement })
 
   return createPortal(
-    <div aria-busy={isDeleting} aria-describedby="confirm-description" aria-labelledby="confirm-title" aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-stone-950/50 p-4" ref={dialogRef} role="alertdialog" tabIndex="-1">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+    <div aria-busy={isDeleting} aria-describedby="confirm-description" aria-labelledby="confirm-title" aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4" ref={dialogRef} role="alertdialog" tabIndex="-1">
+      <div className="w-full max-w-md rounded-lg bg-primary p-6 text-primary-foreground shadow-xl">
         <h2 className="display-font text-2xl" id="confirm-title">Confirmar eliminación</h2>
-        <p className="mt-3 text-stone-700" id="confirm-description">Vas a eliminar {itemName}. Esta acción no se puede deshacer.</p>
+        <p className="mt-3 text-muted-foreground" id="confirm-description">Vas a eliminar {itemName}. Esta acción no se puede deshacer.</p>
         <div className="mt-5 flex justify-end gap-3">
-          <button className="min-h-11 rounded-md border border-stone-300 px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-600" disabled={isDeleting} onClick={onCancel} ref={cancelButtonRef} type="button">Cancelar</button>
-          <button className="min-h-11 rounded-md bg-red-700 px-4 font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700" disabled={isDeleting} onClick={onConfirm} ref={confirmButtonRef} type="button">{isDeleting ? 'Eliminando…' : 'Eliminar'}</button>
+          <button className="min-h-11 rounded-md border border-border px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-focus" disabled={isDeleting} onClick={onCancel} ref={cancelButtonRef} type="button">Cancelar</button>
+          <button className="min-h-11 rounded-md bg-destructive px-4 font-semibold text-destructive-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-focus" disabled={isDeleting} onClick={onConfirm} ref={confirmButtonRef} type="button">{isDeleting ? 'Eliminando…' : 'Eliminar'}</button>
         </div>
       </div>
     </div>,
@@ -63,8 +63,8 @@ function ConfirmDialog({ itemName, isDeleting, onCancel, onConfirm, triggerEleme
 
 function SectionStatus({ error, isLoading, isEmpty, emptyMessage }) {
   if (isLoading) return <p role="status">Cargando…</p>
-  if (error) return <p className="text-red-800" role="alert">{error}</p>
-  if (isEmpty) return <p className="text-stone-600">{emptyMessage}</p>
+  if (error) return <p className="text-destructive" role="alert">{error}</p>
+  if (isEmpty) return <p className="text-muted-foreground">{emptyMessage}</p>
   return null
 }
 
@@ -206,48 +206,48 @@ export function OperationsPage({ operationsService = defaultOperationsService })
 
   return (
     <section className="max-w-6xl">
-      <div className="mb-6"><h1 className="display-font text-3xl">Operaciones</h1><p className="mt-2 text-stone-700">Gestioná las asignaciones internas sin mostrar perfiles personales.</p></div>
-      {submitError ? <p className="mb-4 rounded-md border border-red-300 bg-red-50 p-3 text-red-900" role="alert">{submitError}</p> : null}
+      <div className="mb-6"><h1 className="display-font text-3xl">Operaciones</h1><p className="mt-2 text-muted-foreground">Gestioná las asignaciones internas sin mostrar perfiles personales.</p></div>
+      {submitError ? <p className="mb-4 rounded-md border border-destructive/35 bg-destructive-soft p-3 text-destructive" role="alert">{submitError}</p> : null}
       <SectionStatus error={loadError} isLoading={isLoading} />
       {!isLoading && !loadError ? <div className="grid gap-6 xl:grid-cols-2">
-        <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+        <article className="rounded-lg border border-border bg-cruce-paper p-5 shadow-sm">
           <h2 className="display-font text-2xl">Empleados</h2>
           <form className="mt-4 space-y-3" onSubmit={handleEmployeeSubmit} noValidate>
             <label className="block font-medium" htmlFor="employee-user">Usuario interno <span aria-hidden="true">*</span></label>
-            <select className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-amber-600" id="employee-user" onChange={(event) => setEmployeeUserId(event.target.value)} value={employeeUserId} aria-describedby={employeeErrors.user ? 'employee-user-error' : undefined}>
+            <select className="min-h-11 w-full rounded-md border border-border bg-cruce-paper px-3 focus:outline-none focus:ring-2 focus:ring-focus" id="employee-user" onChange={(event) => setEmployeeUserId(event.target.value)} value={employeeUserId} aria-describedby={employeeErrors.user ? 'employee-user-error' : undefined}>
               <option value="">Seleccioná un usuario</option>
               {directory.map((user) => <option key={user.id} value={user.id}>{user.username} — {user.role}</option>)}
             </select>
-            {employeeErrors.user ? <p className="text-sm text-red-800" id="employee-user-error">{employeeErrors.user.join(' ')}</p> : null}
+            {employeeErrors.user ? <p className="text-sm text-destructive" id="employee-user-error">{employeeErrors.user.join(' ')}</p> : null}
             <ErrorSummary errors={employeeErrors} formRef={employeeErrorRef} />
-            <div className="flex flex-wrap gap-3"><button className="min-h-11 rounded-md bg-stone-900 px-4 font-semibold text-white hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-600" type="submit">{editingEmployeeId ? 'Guardar empleado' : 'Agregar empleado'}</button>{editingEmployeeId ? <button className="min-h-11 rounded-md border border-stone-300 px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-600" onClick={() => { setEditingEmployeeId(null); setEmployeeUserId(''); setEmployeeErrors({}) }} type="button">Cancelar edición</button> : null}</div>
+            <div className="flex flex-wrap gap-3"><button className="min-h-11 rounded-md bg-cruce-ink px-4 font-semibold text-primary hover:bg-surface focus:outline-none focus:ring-2 focus:ring-focus" type="submit">{editingEmployeeId ? 'Guardar empleado' : 'Agregar empleado'}</button>{editingEmployeeId ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-focus" onClick={() => { setEditingEmployeeId(null); setEmployeeUserId(''); setEmployeeErrors({}) }} type="button">Cancelar edición</button> : null}</div>
           </form>
           <div className="mt-6">
             <h3 className="font-semibold">Equipo registrado</h3>
             <SectionStatus isEmpty={!employees.length} emptyMessage="Todavía no hay empleados registrados." />
-            {employees.length ? <ul className="mt-3 divide-y divide-stone-200">{employees.map((employee) => {
+            {employees.length ? <ul className="mt-3 divide-y divide-border">{employees.map((employee) => {
               const user = userById[String(employee.user)]
-              return <li className="flex items-center justify-between gap-3 py-3" key={employee.id}><span><span className="font-medium">{user?.username ?? `Usuario #${employee.user}`}</span>{user ? <span className="ml-2 text-sm text-stone-600">{user.role}</span> : null}</span><span className="flex gap-1"><button className="min-h-11 rounded-md px-3 text-sm font-semibold text-stone-800 hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-600" onClick={() => startEditingEmployee(employee)} type="button">Editar</button><button className="min-h-11 rounded-md px-3 text-sm font-semibold text-red-800 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-700" onClick={(event) => setConfirmation({ type: 'employee', id: employee.id, name: user?.username ?? `el empleado #${employee.id}`, triggerElement: event.currentTarget })} type="button">Eliminar</button></span></li>
+              return <li className="flex items-center justify-between gap-3 py-3" key={employee.id}><span><span className="font-medium">{user?.username ?? `Usuario #${employee.user}`}</span>{user ? <span className="ml-2 text-sm text-muted-foreground">{user.role}</span> : null}</span><span className="flex gap-1"><button className="min-h-11 rounded-md px-3 text-sm font-semibold text-cruce-ink hover:bg-primary focus:outline-none focus:ring-2 focus:ring-focus" onClick={() => startEditingEmployee(employee)} type="button">Editar</button><button className="min-h-11 rounded-md px-3 text-sm font-semibold text-destructive hover:bg-destructive-soft focus:outline-none focus:ring-2 focus:ring-focus" onClick={(event) => setConfirmation({ type: 'employee', id: employee.id, name: user?.username ?? `el empleado #${employee.id}`, triggerElement: event.currentTarget })} type="button">Eliminar</button></span></li>
             })}</ul> : null}
           </div>
         </article>
-        <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+        <article className="rounded-lg border border-border bg-cruce-paper p-5 shadow-sm">
           <h2 className="display-font text-2xl">Turnos</h2>
           <form className="mt-4 grid gap-3" onSubmit={handleShiftSubmit} noValidate>
             <label className="block font-medium" htmlFor="shift-employee">Empleado <span aria-hidden="true">*</span></label>
-            <select aria-invalid={Boolean(shiftErrors.employee)} aria-describedby={shiftErrors.employee ? 'shift-employee-error' : undefined} className="min-h-11 rounded-md border border-stone-300 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-amber-600" id="shift-employee" onChange={(event) => setShiftForm((current) => ({ ...current, employee: event.target.value }))} value={shiftForm.employee}><option value="">Seleccioná un empleado</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{userById[String(employee.user)]?.username ?? `Empleado #${employee.id}`}</option>)}</select>
-            {shiftErrors.employee ? <p className="text-sm text-red-800" id="shift-employee-error">{shiftErrors.employee.join(' ')}</p> : null}
+            <select aria-invalid={Boolean(shiftErrors.employee)} aria-describedby={shiftErrors.employee ? 'shift-employee-error' : undefined} className="min-h-11 rounded-md border border-border bg-cruce-paper px-3 focus:outline-none focus:ring-2 focus:ring-focus" id="shift-employee" onChange={(event) => setShiftForm((current) => ({ ...current, employee: event.target.value }))} value={shiftForm.employee}><option value="">Seleccioná un empleado</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{userById[String(employee.user)]?.username ?? `Empleado #${employee.id}`}</option>)}</select>
+            {shiftErrors.employee ? <p className="text-sm text-destructive" id="shift-employee-error">{shiftErrors.employee.join(' ')}</p> : null}
             <label className="block font-medium" htmlFor="shift-start">Inicio <span aria-hidden="true">*</span></label>
-            <input aria-invalid={Boolean(shiftErrors.starts_at)} aria-describedby={shiftErrors.starts_at ? 'shift-start-error' : undefined} className="min-h-11 rounded-md border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-amber-600" id="shift-start" type="datetime-local" value={shiftForm.startsAt} onChange={(event) => setShiftForm((current) => ({ ...current, startsAt: event.target.value }))} />
-            {shiftErrors.starts_at ? <p className="text-sm text-red-800" id="shift-start-error">{shiftErrors.starts_at.join(' ')}</p> : null}
+            <input aria-invalid={Boolean(shiftErrors.starts_at)} aria-describedby={shiftErrors.starts_at ? 'shift-start-error' : undefined} className="min-h-11 rounded-md border border-border bg-cruce-paper px-3 focus:outline-none focus:ring-2 focus:ring-focus" id="shift-start" type="datetime-local" value={shiftForm.startsAt} onChange={(event) => setShiftForm((current) => ({ ...current, startsAt: event.target.value }))} />
+            {shiftErrors.starts_at ? <p className="text-sm text-destructive" id="shift-start-error">{shiftErrors.starts_at.join(' ')}</p> : null}
             <label className="block font-medium" htmlFor="shift-end">Fin <span aria-hidden="true">*</span></label>
-            <input aria-invalid={Boolean(shiftErrors.ends_at)} aria-describedby={shiftErrors.ends_at ? 'shift-end-error' : undefined} className="min-h-11 rounded-md border border-stone-300 px-3 focus:outline-none focus:ring-2 focus:ring-amber-600" id="shift-end" type="datetime-local" value={shiftForm.endsAt} onChange={(event) => setShiftForm((current) => ({ ...current, endsAt: event.target.value }))} />
-            {shiftErrors.ends_at ? <p className="text-sm text-red-800" id="shift-end-error">{shiftErrors.ends_at.join(' ')}</p> : null}
+            <input aria-invalid={Boolean(shiftErrors.ends_at)} aria-describedby={shiftErrors.ends_at ? 'shift-end-error' : undefined} className="min-h-11 rounded-md border border-border bg-cruce-paper px-3 focus:outline-none focus:ring-2 focus:ring-focus" id="shift-end" type="datetime-local" value={shiftForm.endsAt} onChange={(event) => setShiftForm((current) => ({ ...current, endsAt: event.target.value }))} />
+            {shiftErrors.ends_at ? <p className="text-sm text-destructive" id="shift-end-error">{shiftErrors.ends_at.join(' ')}</p> : null}
             <ErrorSummary errors={shiftErrors} formRef={shiftErrorRef} />
-            <div className="flex flex-wrap gap-3"><button className="min-h-11 rounded-md bg-stone-900 px-4 font-semibold text-white hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-600" type="submit">{editingShiftId ? 'Guardar turno' : 'Crear turno'}</button>{editingShiftId ? <button className="min-h-11 rounded-md border border-stone-300 px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-600" onClick={() => { setEditingShiftId(null); setShiftForm(emptyShiftForm()); setShiftErrors({}) }} type="button">Cancelar edición</button> : null}</div>
+            <div className="flex flex-wrap gap-3"><button className="min-h-11 rounded-md bg-cruce-ink px-4 font-semibold text-primary hover:bg-surface focus:outline-none focus:ring-2 focus:ring-focus" type="submit">{editingShiftId ? 'Guardar turno' : 'Crear turno'}</button>{editingShiftId ? <button className="min-h-11 rounded-md border border-border px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-focus" onClick={() => { setEditingShiftId(null); setShiftForm(emptyShiftForm()); setShiftErrors({}) }} type="button">Cancelar edición</button> : null}</div>
           </form>
           <div className="mt-6"><h3 className="font-semibold" ref={shiftsHeadingRef} tabIndex="-1">Cronología</h3><SectionStatus isEmpty={!shifts.length} emptyMessage="Todavía no hay turnos programados." />
-            {shifts.length ? <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Turnos ordenados cronológicamente</caption><thead><tr className="border-b border-stone-300"><th className="p-2">Empleado</th><th className="p-2">Inicio</th><th className="p-2">Fin</th><th className="p-2"><span className="sr-only">Acciones</span></th></tr></thead><tbody>{sortedShifts.map((shift) => { const employee = employeeById[String(shift.employee)]; const user = employee && userById[String(employee.user)]; return <tr className="border-b border-stone-200" key={shift.id}><td className="p-2">{user?.username ?? `Empleado #${shift.employee}`}</td><td className="p-2">{DATE_TIME_FORMATTER.format(new Date(shift.starts_at))}</td><td className="p-2">{DATE_TIME_FORMATTER.format(new Date(shift.ends_at))}</td><td className="p-2 whitespace-nowrap"><button className="min-h-11 px-2 font-semibold text-stone-800 hover:underline focus:outline-none focus:ring-2 focus:ring-amber-600" onClick={() => startEditing(shift)} type="button">Editar</button><button className="min-h-11 px-2 font-semibold text-red-800 hover:underline focus:outline-none focus:ring-2 focus:ring-red-700" onClick={(event) => setConfirmation({ type: 'shift', id: shift.id, name: 'este turno', triggerElement: event.currentTarget, successFocusElement: shiftsHeadingRef.current })} type="button">Eliminar</button></td></tr> })}</tbody></table></div> : null}
+            {shifts.length ? <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Turnos ordenados cronológicamente</caption><thead><tr className="border-b border-border"><th className="p-2">Empleado</th><th className="p-2">Inicio</th><th className="p-2">Fin</th><th className="p-2"><span className="sr-only">Acciones</span></th></tr></thead><tbody>{sortedShifts.map((shift) => { const employee = employeeById[String(shift.employee)]; const user = employee && userById[String(employee.user)]; return <tr className="border-b border-border" key={shift.id}><td className="p-2">{user?.username ?? `Empleado #${shift.employee}`}</td><td className="p-2">{DATE_TIME_FORMATTER.format(new Date(shift.starts_at))}</td><td className="p-2">{DATE_TIME_FORMATTER.format(new Date(shift.ends_at))}</td><td className="p-2 whitespace-nowrap"><button className="min-h-11 px-2 font-semibold text-cruce-ink hover:underline focus:outline-none focus:ring-2 focus:ring-focus" onClick={() => startEditing(shift)} type="button">Editar</button><button className="min-h-11 px-2 font-semibold text-destructive hover:underline focus:outline-none focus:ring-2 focus:ring-focus" onClick={(event) => setConfirmation({ type: 'shift', id: shift.id, name: 'este turno', triggerElement: event.currentTarget, successFocusElement: shiftsHeadingRef.current })} type="button">Eliminar</button></td></tr> })}</tbody></table></div> : null}
           </div>
         </article>
       </div> : null}
