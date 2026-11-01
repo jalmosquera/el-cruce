@@ -21,6 +21,12 @@ RUN uv sync --frozen --no-install-project
 
 COPY --chown=app:app . .
 RUN uv sync --frozen
+RUN DJANGO_SETTINGS_MODULE=config.settings.test \
+    DJANGO_SECRET_KEY=build-only-django-secret-key-at-least-32-characters \
+    JWT_SIGNING_KEY=build-only-jwt-signing-key-at-least-32-characters \
+    POSTGRES_HOST=127.0.0.1 POSTGRES_PORT=55435 POSTGRES_DB=elcruce_build \
+    POSTGRES_USER=build POSTGRES_PASSWORD=build-only-password \
+    uv run python manage.py collectstatic --noinput
 
 EXPOSE 8000
 

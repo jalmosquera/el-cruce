@@ -40,8 +40,9 @@ uv run gunicorn --config gunicorn.conf.py config.wsgi:application
 
 Railway debe exponer el servicio únicamente a través de su terminación HTTPS y
 comprobar `GET /healthz/`. Django confía en el encabezado de proxy HTTPS para ese
-proxy concreto, redirige solicitudes HTTP y habilita HSTS de un año sin incluir
-subdominios ni precarga. No se debe abrir PostgreSQL públicamente.
+proxy concreto y redirige solicitudes HTTP. HSTS inicia desactivado hasta que un
+dominio personalizado aprobado sirva HTTPS correctamente. No se debe abrir
+PostgreSQL públicamente.
 
 Variables requeridas en Railway, siempre desde su almacén de variables y nunca
 desde Git:
@@ -92,6 +93,87 @@ dominios, incluso con CORS explícito, porque el navegador puede bloquear las
 cookies de terceros. No habilites ese flujo hasta disponer de subdominios
 personalizados aprobados bajo el mismo dominio registrable.
 
+## Estáticos, errores y logs
+
+El build del backend ejecuta `collectstatic --noinput` y deja los archivos en
+`/app/staticfiles` (`STATIC_ROOT`). No se agregó WhiteNoise porque el backend no
+usa Django Admin ni sirve HTML público: Gunicorn **no debe** exponer `/static/`.
+Cuando exista una topología de producción aprobada, su proxy o almacenamiento
+estático debe publicar exclusivamente ese directorio bajo `/static/`.
+
+DRF usa sólo `JSONRenderer` en producción. Errores de rutas y fallos inesperados
+bajo `/api/` devuelven JSON seguro sin traza, rutas internas, credenciales ni
+detalles de base de datos. Los errores ya estables de validación, autenticación y
+permisos de DRF se conservan para no romper consumidores.
+
+El backend escribe eventos JSON por stdout con `timestamp`, `level`, `logger` y
+`message`. `DJANGO_LOG_LEVEL` acepta solamente `CRITICAL`, `ERROR`, `WARNING`,
+`INFO` o `DEBUG`; su valor seguro por defecto es `INFO`. El formateador elimina
+campos y patrones de secretos conocidos, pero no sustituye la regla operativa:
+nunca registrar cuerpos de autenticación, cookies, URLs de base de datos ni
+tokens.
+
+## HSTS y secretos
+
+Variables HSTS de producción:
+
+```text
+DJANGO_HSTS_SECONDS=0
+DJANGO_HSTS_INCLUDE_SUBDOMAINS=false
+DJANGO_HSTS_PRELOAD=false
+```
+
+Los booleanos son estrictos (`true/false`, `yes/no`, `on/off` o `1/0`) y los
+segundos deben ser enteros no negativos. Después de validar HTTPS en todos los
+subdominios aprobados, se puede proponer elevar los segundos. La precarga exige
+explícitamente `DJANGO_HSTS_SECONDS >= 31536000` y subdominios habilitados; no la
+actives sin aprobación porque resulta difícil de revertir en los navegadores.
+
+`DJANGO_SECRET_KEY` y `JWT_SIGNING_KEY` son secretos distintos, de al menos 50
+caracteres en producción. Generarlos fuera de Git y del historial de shell, por
+ejemplo con el gestor de secretos aprobado o `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+Rotar uno por vez en una ventana aprobada: respaldar y verificar primero, cambiar
+el secreto en el almacén, desplegar, probar autenticación; rotar `JWT_SIGNING_KEY`
+invalida tokens existentes y exige reingreso. Nunca imprimir, pegar en tickets ni
+usar los valores de `.env.example`.
+
+## Backups, restauración y drill
+
+Los scripts `scripts/backup-postgres.sh`, `scripts/restore-postgres.sh` y
+`scripts/restore-drill-postgres.sh` requieren herramientas cliente PostgreSQL
+(`pg_dump`, `pg_restore`, `psql`, `createdb` y `dropdb`). Guardar los dumps cifrados
+en almacenamiento con acceso limitado y conservarlos según una política aprobada.
+El script de backup usa formato custom y no sobrescribe archivos existentes.
+
+La restauración sólo acepta bases cuyo nombre empieza con `elcruce_restore_` o
+`elcruce_disposable_`, y requiere que `RESTORE_CONFIRM_TARGET` repita exactamente
+el nombre objetivo. Nunca apuntar `RESTORE_DATABASE_URL` a una base operativa.
+
+El drill automatizado requiere dos URLs de una instancia PostgreSQL descartable en
+el puerto `55435`, el marcador literal `elcruce-restore-drill` y una fuente también
+marcada como descartable. Crea una única base temporal con prefijo
+`elcruce_restore_drill_`, hace dump/restauración, compara las tablas públicas y sus
+conteos de filas, y elimina sólo esa base que creó. No acepta puertos ni nombres de
+producción.
+
+Ejemplo para el propietario en Fish, usando únicamente valores descartables
+aprobados y sin poner credenciales en el historial:
+
+```fish
+begin
+  set -lx RESTORE_DRILL_SOURCE_DATABASE_URL 'postgresql://...:55435/elcruce_disposable_source'
+  set -lx RESTORE_DRILL_ADMIN_DATABASE_URL 'postgresql://...:55435/postgres'
+  set -lx RESTORE_DRILL_DISPOSABLE_MARKER elcruce-restore-drill
+  ./scripts/restore-drill-postgres.sh
+end
+```
+
+Si un despliegue o migración falla: detener la promoción, preservar los logs y el
+artefacto de backup, comunicar el incidente y no repetir comandos destructivos.
+Evaluar la migración con el plan aprobado; sólo un responsable autorizado puede
+decidir rollback de aplicación o restauración hacia una base descartable primero.
+Luego verificar esquema, conteos y el healthcheck antes de reanudar servicio.
+
 ## Migraciones y recuperación
 
 No agregues `migrate` al comando de inicio. Para cada release autorizado:
@@ -104,3 +186,21 @@ No agregues `migrate` al comando de inicio. Para cada release autorizado:
 Una migración fallida requiere detener nuevos intentos y aplicar el procedimiento
 de rollback o restauración aprobado. No se autorizan borrados de datos, volúmenes
 ni restauraciones destructivas como parte de este procedimiento.
+
+## Checklist de despliegue autorizado
+
+1. Confirmar que el cambio está revisado, las pruebas y auditorías requeridas tienen evidencia y existe un backup restaurable con drill reciente.
+2. Verificar secretos distintos y no-placeholder, hosts/orígenes HTTPS exactos, nivel de log válido y HSTS en el estado aprobado.
+3. Verificar que la infraestructura aprobada sirve `STATIC_ROOT` sin pedir a Gunicorn que entregue archivos estáticos.
+4. Revisar `migrate --plan`; ejecutar la migración sólo tras la autorización específica.
+5. Desplegar el artefacto aprobado, comprobar `GET /healthz/`, un error API seguro y el flujo funcional afectado.
+6. Revisar logs JSON sin datos sensibles, observar errores y documentar el resultado o activar la recuperación aprobada.
+
+## Promoción controlada de dev a main
+
+La promoción no es automática. Un responsable debe aprobar explícitamente cada
+pull request desde `dev` hacia `main` después de revisar el diff acumulado, estado
+de CI, evidencia de backups/drill y checklist de despliegue. Crear un release o
+desplegar sigue requiriendo autorización separada. No se reescribe historial, no se
+promueve con checks fallidos y no se ejecuta restauración contra una base real como
+parte de la promoción.

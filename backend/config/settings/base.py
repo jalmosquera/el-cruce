@@ -78,6 +78,50 @@ def get_boolean_environment_value(name: str, *, default: bool) -> bool:
     raise ImproperlyConfigured(message)
 
 
+def get_nonnegative_integer_environment_value(name: str, *, default: int) -> int:
+    """Parse a nonnegative integer environment value without coercion."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        parsed_value = int(value)
+    except ValueError as error:
+        raise ImproperlyConfigured(
+            f"The {name} environment variable must be a nonnegative integer."
+        ) from error
+    if parsed_value < 0:
+        raise ImproperlyConfigured(
+            f"The {name} environment variable must be a nonnegative integer."
+        )
+    return parsed_value
+
+
+def get_log_level(name: str, *, default: str = "INFO") -> str:
+    """Return a standard-library logging level and reject arbitrary configuration."""
+    value = os.environ.get(name, default).strip().upper()
+    if value not in {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}:
+        raise ImproperlyConfigured(
+            f"The {name} environment variable must be a standard logging level."
+        )
+    return value
+
+
+def validate_production_secrets(
+    secret_key: str | None = None, jwt_signing_key: str | None = None
+) -> None:
+    """Reject weak or reused production signing secrets without ever exposing them."""
+    secret_key = SECRET_KEY if secret_key is None else secret_key
+    jwt_signing_key = JWT_SIGNING_KEY if jwt_signing_key is None else jwt_signing_key
+    if secret_key == jwt_signing_key:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY and JWT_SIGNING_KEY must be distinct in production."
+        )
+    if len(secret_key) < 50 or len(jwt_signing_key) < 50:
+        raise ImproperlyConfigured(
+            "Production signing secrets must each contain at least 50 characters."
+        )
+
+
 def get_csv_environment_value(name: str, *, default: tuple[str, ...] = ()) -> list[str]:
     """Parse a comma-separated environment value, ignoring blank entries."""
     value = os.environ.get(name)
@@ -300,7 +344,8 @@ TIME_ZONE = "Europe/Madrid"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "identity.User"
@@ -312,6 +357,23 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "EXCEPTION_HANDLER": "config.api_errors.exception_handler",
+}
+
+LOG_LEVEL = get_log_level("DJANGO_LOG_LEVEL")
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {"redact_secrets": {"()": "config.logging.RedactSecretsFilter"}},
+    "formatters": {"json": {"()": "config.logging.SafeJsonFormatter"}},
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["redact_secrets"],
+        }
+    },
+    "root": {"handlers": ["console"], "level": LOG_LEVEL},
 }
 
 SIMPLE_JWT = {

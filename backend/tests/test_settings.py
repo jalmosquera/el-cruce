@@ -58,7 +58,7 @@ def test_get_environment_value_returns_a_safe_configured_value(
 
 def test_settings_reject_missing_jwt_signing_key() -> None:
     environment = {
-        "DJANGO_SECRET_KEY": "test-only-django-secret-not-for-production",
+        "DJANGO_SECRET_KEY": "test-only-django-secret-with-at-least-fifty-characters-long",
         "PATH": os.environ["PATH"],
     }
 
@@ -102,6 +102,35 @@ def test_get_boolean_environment_value_rejects_ambiguous_values(
 
     with pytest.raises(ImproperlyConfigured, match="must be a boolean"):
         base.get_boolean_environment_value("BOOLEAN_VALUE", default=False)
+
+
+@pytest.mark.parametrize(("value", "expected"), [(None, 0), ("0", 0), ("31536000", 31_536_000)])
+def test_get_nonnegative_integer_environment_value_parses_safe_values(
+    monkeypatch: pytest.MonkeyPatch, value: str | None, expected: int
+) -> None:
+    if value is None:
+        monkeypatch.delenv("INTEGER_VALUE", raising=False)
+    else:
+        monkeypatch.setenv("INTEGER_VALUE", value)
+
+    assert base.get_nonnegative_integer_environment_value("INTEGER_VALUE", default=0) == expected
+
+
+@pytest.mark.parametrize("value", ["-1", "1.5", "invalid"])
+def test_get_nonnegative_integer_environment_value_rejects_invalid_values(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("INTEGER_VALUE", value)
+
+    with pytest.raises(ImproperlyConfigured, match="nonnegative integer"):
+        base.get_nonnegative_integer_environment_value("INTEGER_VALUE", default=0)
+
+
+def test_get_log_level_rejects_arbitrary_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DJANGO_LOG_LEVEL", "verbose")
+
+    with pytest.raises(ImproperlyConfigured, match="standard logging level"):
+        base.get_log_level("DJANGO_LOG_LEVEL")
 
 
 def test_get_csv_environment_value_ignores_empty_entries(
@@ -326,8 +355,26 @@ def test_development_settings_apply_the_development_defaults(
     assert development.PUBLIC_SITE_URL == "https://elcruce.test"
 
 
+@pytest.fixture
+def production_signing_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
+    with monkeypatch.context() as production_environment:
+        production_environment.setenv(
+            "DJANGO_SECRET_KEY",
+            "production-test-django-signing-secret-that-is-long-and-distinct-01",
+        )
+        production_environment.setenv(
+            "JWT_SIGNING_KEY",
+            "production-test-jwt-signing-secret-that-is-long-and-distinct-02",
+        )
+        importlib.reload(base)
+        yield
+
+    importlib.reload(base)
+
+
 def test_production_settings_require_explicit_allowed_hosts(
     monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
 ) -> None:
     monkeypatch.delenv("DJANGO_ALLOWED_HOSTS", raising=False)
 
@@ -339,6 +386,7 @@ def test_production_settings_require_explicit_allowed_hosts(
 
 def test_production_settings_enable_cookie_security(
     monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
 ) -> None:
     monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "elcruce.example")
     monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
@@ -365,13 +413,66 @@ def test_production_settings_enable_cookie_security(
     assert production.SESSION_COOKIE_SAMESITE == "Lax"
     assert production.JWT_REFRESH_COOKIE_SAMESITE == "Lax"
     assert production.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https")
+    assert production.SECURE_HSTS_SECONDS == 0
+    assert production.SECURE_HSTS_INCLUDE_SUBDOMAINS is False
+    assert production.SECURE_HSTS_PRELOAD is False
+    assert production.REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] == (
+        "rest_framework.renderers.JSONRenderer",
+    )
+
+
+def test_production_settings_configure_valid_hsts_after_domain_approval(
+    monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
+) -> None:
+    monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "api.approved.example")
+    monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
+    monkeypatch.setenv("DJANGO_CSRF_TRUSTED_ORIGINS", "https://app.approved.example")
+    monkeypatch.setenv("PUBLIC_SITE_URL", "https://public.approved.example")
+    monkeypatch.setenv("DJANGO_HSTS_SECONDS", "31536000")
+    monkeypatch.setenv("DJANGO_HSTS_INCLUDE_SUBDOMAINS", "true")
+    monkeypatch.setenv("DJANGO_HSTS_PRELOAD", "true")
+
+    from config.settings import production
+
+    importlib.reload(production)
+
     assert production.SECURE_HSTS_SECONDS == 31_536_000
+    assert production.SECURE_HSTS_INCLUDE_SUBDOMAINS is True
+    assert production.SECURE_HSTS_PRELOAD is True
+
+
+def test_production_settings_reject_preload_without_its_browser_requirements(
+    monkeypatch: pytest.MonkeyPatch,
+    production_signing_secrets: None,
+) -> None:
+    monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "api.approved.example")
+    monkeypatch.setenv("DJANGO_CORS_ALLOWED_ORIGINS", "https://app.approved.example")
+    monkeypatch.setenv("DJANGO_CSRF_TRUSTED_ORIGINS", "https://app.approved.example")
+    monkeypatch.setenv("PUBLIC_SITE_URL", "https://public.approved.example")
+    monkeypatch.setenv("DJANGO_HSTS_SECONDS", "0")
+    monkeypatch.setenv("DJANGO_HSTS_INCLUDE_SUBDOMAINS", "false")
+    monkeypatch.setenv("DJANGO_HSTS_PRELOAD", "true")
+
+    from config.settings import production
+
+    with pytest.raises(ImproperlyConfigured, match="requires include subdomains"):
+        importlib.reload(production)
+
+
+def test_production_settings_reject_reused_or_short_signing_secrets(
+) -> None:
+    with pytest.raises(ImproperlyConfigured, match="must be distinct"):
+        base.validate_production_secrets("same-secret", "same-secret")
+
+    with pytest.raises(ImproperlyConfigured, match="at least 50 characters"):
+        base.validate_production_secrets("short-secret", "a-different-secret")
 
 
 def test_production_settings_fail_closed_when_public_site_url_is_missing() -> None:
     environment = {
-        "DJANGO_SECRET_KEY": "test-only-django-secret-not-for-production",
-        "JWT_SIGNING_KEY": "test-only-jwt-secret-not-for-production",
+        "DJANGO_SECRET_KEY": "test-only-django-secret-with-at-least-fifty-characters-long",
+        "JWT_SIGNING_KEY": "test-only-jwt-secret-with-at-least-fifty-characters-long-too",
         "DATABASE_URL": "postgresql://application:secure-password@db.example/elcruce",
         "DJANGO_ALLOWED_HOSTS": "api.approved.example",
         "DJANGO_CORS_ALLOWED_ORIGINS": "https://app.approved.example",

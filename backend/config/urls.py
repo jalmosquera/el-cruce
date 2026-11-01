@@ -25,3 +25,8 @@ urlpatterns = [
     path("api/", include("employees.urls")),
     path("q/", include("qr_codes.public_urls")),
 ]
+
+handler400 = "config.api_errors.api_error_400"
+handler403 = "config.api_errors.api_error_403"
+handler404 = "config.api_errors.api_error_404"
+handler500 = "config.api_errors.api_error_500"
