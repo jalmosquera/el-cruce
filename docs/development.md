@@ -22,6 +22,10 @@ npm run verify:prerender
 
 The automated test and coverage commands are documented with their respective testing foundations. Coverage thresholds remain independent: at least 80% for backend and frontend.
 
+## Corporate palette contrast audit
+
+`frontend/src/styles/index.css` is the single source of truth for DESIGN-01 tokens. It defines the six approved corporate colors and derives semantic UI variants only where contrast requires them. Approved text pairs meet WCAG AA: `foreground/background` is 10.53:1, `foreground/surface` is 6.02:1, `primary-foreground/primary` is 10.53:1, `muted/background` is 6.42:1, `destructive/destructive-soft` is 7.01:1, and `success/success-soft` is 6.19:1. `focus` (Charcoal) is for light UI and `focus-on-dark` (Rosy Cream) is for dark UI; each relevant pair exceeds 3:1. Mauve Gray is decorative or muted text on dark surfaces only, never ordinary text on a light surface. Terracotta is an accent only and is not used for destructive states.
+
 ## Browser E2E (Playwright)
 
 The E2E suite runs Chromium only against `compose.e2e.yaml`. It creates a separate Docker Compose project with a PostgreSQL data directory mounted as `tmpfs`, migrates and deterministically seeds only fictitious E2E users, rooms, guests, menu content, reservations, shifts, and a QR record. It never connects to the normal Compose database, a preview database, or existing local records. The disposable stack is removed automatically, including volumes, when the suite finishes.

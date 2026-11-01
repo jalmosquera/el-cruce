@@ -1,122 +1,129 @@
 @import "tailwindcss";
 
-@theme {
-  --color-cruce-ink: #131313;
-  --color-cruce-panel: #201f1c;
-  --color-cruce-panel-muted: #302e29;
-  --color-cruce-ivory: #f4eddd;
-  --color-cruce-paper: #fffaf0;
-  --color-cruce-muted: #6d665b;
-  --color-cruce-line: #d7cdbb;
-  --color-cruce-amber: #d6b477;
-  --color-cruce-amber-dark: #765820;
-  /* Focus contrast: #997523 is 3.66:1 against ivory and >=3.18:1 on dark dashboard surfaces. */
-  --color-cruce-focus: #997523;
-  --color-cruce-terracotta: #9a4c35;
-  --color-cruce-danger: #8b3026;
-  --color-cruce-danger-soft: #f8e2d7;
-  --color-cruce-success: #315b4b;
-  --color-cruce-success-soft: #dce9df;
-}
-
+/* DESIGN-01 palette source of truth. Named corporate colors are decorative; UI uses semantic tokens. */
 :root {
+  --corporate-plum: #583F44;
+  --corporate-rosy-cream: #D9CBC6;
+  --corporate-charcoal: #221C27;
+  --corporate-mauve-gray: #AB9E9E;
+  --corporate-dusty-mauve: #A17F76;
+  --corporate-terracotta: #A45E43;
+
+  --background: var(--corporate-charcoal);
+  --foreground: var(--corporate-rosy-cream);
+  --surface: var(--corporate-plum);
+  --surface-raised: #6C5056;
+  --primary: var(--corporate-rosy-cream);
+  --primary-foreground: var(--corporate-charcoal);
+  --secondary: var(--corporate-dusty-mauve);
+  --secondary-foreground: var(--corporate-charcoal);
+  --accent: var(--corporate-terracotta);
+  --accent-foreground: #FFF6F1;
+  --muted: var(--corporate-mauve-gray);
+  --muted-foreground: #5A454B;
+  --border: #BCAEA9;
+  --focus: var(--corporate-charcoal);
+  --focus-on-dark: var(--corporate-rosy-cream);
+  --destructive: #713542;
+  --destructive-foreground: #FFF6F1;
+  --destructive-soft: #F0DDD9;
+  --success: #36594D;
+  --success-soft: #DCE8E1;
+  --warning: #79552F;
+  --warning-soft: #F1E2CE;
+
+  /* Decorative-only values; do not use these as ordinary body text. */
+  --decorative-canvas: #2E252F;
+  --decorative-deep: #30262A;
+  --decorative-shadow: #3B2B31;
+  --decorative-highlight: #E9DCD7;
+  --decorative-art-light: #D9CBC6;
+
   color-scheme: dark;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #131313;
-  color: #f4eddd;
+  background: var(--background);
+  color: var(--foreground);
 }
 
-body {
-  margin: 0;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  --color-focus-on-dark: var(--focus-on-dark);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-corporate-plum: var(--corporate-plum);
+  --color-corporate-rosy-cream: var(--corporate-rosy-cream);
+  --color-corporate-charcoal: var(--corporate-charcoal);
+  --color-corporate-mauve-gray: var(--corporate-mauve-gray);
+  --color-corporate-dusty-mauve: var(--corporate-dusty-mauve);
+  --color-corporate-terracotta: var(--corporate-terracotta);
+  --color-decorative-canvas: var(--decorative-canvas);
+  --color-decorative-deep: var(--decorative-deep);
+  --color-decorative-shadow: var(--decorative-shadow);
+  --color-decorative-highlight: var(--decorative-highlight);
+  --color-decorative-art-light: var(--decorative-art-light);
+
+  /* Legacy destructive-label utility maps to the semantic foreground token. */
+  --color-white: var(--destructive-foreground);
+
+  /* Compatibility aliases for existing operational components. */
+  --color-cruce-ink: var(--focus);
+  --color-cruce-panel: var(--surface);
+  --color-cruce-panel-muted: var(--surface-raised);
+  --color-cruce-ivory: var(--primary);
+  --color-cruce-paper: var(--accent-foreground);
+  --color-cruce-muted: var(--muted-foreground);
+  --color-cruce-line: var(--border);
+  --color-cruce-amber: var(--secondary);
+  --color-cruce-amber-dark: var(--secondary-foreground);
+  --color-cruce-focus: var(--focus);
+  --color-cruce-terracotta: var(--accent);
+  --color-cruce-danger: var(--destructive);
+  --color-cruce-danger-soft: var(--destructive-soft);
+  --color-cruce-success: var(--success);
+  --color-cruce-success-soft: var(--success-soft);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* Contrast audit: foreground/background 10.53:1; foreground/surface 6.02:1;
+   primary-foreground/primary 10.53:1; muted/background 6.42:1;
+   destructive/destructive-soft 7.01:1; success/success-soft 6.19:1.
+   Focus uses focus (charcoal) on light UI (>= 10.53:1) and focus-on-dark
+   (rosy cream) on dark UI (>= 6.02:1). Mauve Gray is never normal text on light surfaces.
+   Terracotta is an accent only and is not used for destructive states. */
 
-::selection {
-  background: #d5a278;
-  color: #29271f;
-}
+body { margin: 0; }
+html { scroll-behavior: smooth; }
 
-.display-font {
-  font-family: Iowan Old Style, Baskerville, Georgia, "Times New Roman", serif;
-}
+::selection { background: var(--secondary); color: var(--primary-foreground); }
 
-.paper-grain {
-  background-image: radial-gradient(rgba(244, 237, 221, 0.07) 0.6px, transparent 0.7px);
-  background-size: 6px 6px;
-}
+.display-font { font-family: Iowan Old Style, Baskerville, Georgia, "Times New Roman", serif; }
 
-.abstract-sunrise {
-  background:
-    radial-gradient(circle at 75% 24%, rgba(224, 180, 104, 0.9) 0 6%, transparent 6.4%),
-    radial-gradient(ellipse at 69% 86%, rgba(178, 79, 50, 0.9) 0 20%, transparent 20.4%),
-    linear-gradient(137deg, #172019 0%, #3b4934 47%, #897146 47.4%, #b8603e 100%);
-}
-
-.abstract-table {
-  background:
-    linear-gradient(116deg, transparent 0 50%, rgba(244, 237, 221, 0.85) 50.3% 52%, transparent 52.3%),
-    radial-gradient(ellipse at 50% 74%, #cfa35e 0 14%, transparent 14.4%),
-    linear-gradient(140deg, #2e2820 0 30%, #8f4b34 30.3% 58%, #bd8150 58.3% 100%);
-}
-
-.abstract-window {
-  background:
-    linear-gradient(90deg, transparent 0 46%, rgba(29, 35, 27, 0.9) 46.5% 51.5%, transparent 52%),
-    linear-gradient(0deg, transparent 0 52%, rgba(29, 35, 27, 0.9) 52.5% 57.5%, transparent 58%),
-    linear-gradient(140deg, #61706a 0%, #9d9364 54%, #a34f36 54.4%, #583827 100%);
-}
-
-.landing-grain {
-  background-image:
-    radial-gradient(rgba(244, 237, 221, 0.055) 0.65px, transparent 0.7px),
-    linear-gradient(112deg, rgba(224, 180, 104, 0.045), transparent 32%);
-  background-size: 6px 6px, 100% 100%;
-}
-
-.eyebrow-rule::before {
-  content: "";
-  display: inline-block;
-  width: 2.25rem;
-  height: 1px;
-  margin-right: 0.8rem;
-  vertical-align: middle;
-  background: currentColor;
-}
-
-.entrance-reveal {
-  animation: entrance-reveal 700ms cubic-bezier(0.2, 0.65, 0.25, 1) both;
-}
-
-.entrance-reveal-delayed {
-  animation: entrance-reveal 700ms 130ms cubic-bezier(0.2, 0.65, 0.25, 1) both;
-}
-
-@keyframes entrance-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(1rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+.paper-grain { background-image: radial-gradient(color-mix(in srgb, var(--decorative-art-light) 8%, transparent) 0.6px, transparent 0.7px); background-size: 6px 6px; }
+.abstract-sunrise { background: radial-gradient(circle at 75% 24%, var(--corporate-rosy-cream) 0 6%, transparent 6.4%), radial-gradient(ellipse at 69% 86%, var(--corporate-terracotta) 0 20%, transparent 20.4%), linear-gradient(137deg, var(--corporate-charcoal) 0%, var(--corporate-plum) 47%, var(--corporate-dusty-mauve) 47.4%, var(--corporate-terracotta) 100%); }
+.abstract-table { background: linear-gradient(116deg, transparent 0 50%, color-mix(in srgb, var(--corporate-rosy-cream) 85%, transparent) 50.3% 52%, transparent 52.3%), radial-gradient(ellipse at 50% 74%, var(--corporate-dusty-mauve) 0 14%, transparent 14.4%), linear-gradient(140deg, var(--corporate-charcoal) 0 30%, var(--corporate-terracotta) 30.3% 58%, var(--corporate-dusty-mauve) 58.3% 100%); }
+.abstract-window { background: linear-gradient(90deg, transparent 0 46%, color-mix(in srgb, var(--corporate-charcoal) 90%, transparent) 46.5% 51.5%, transparent 52%), linear-gradient(0deg, transparent 0 52%, color-mix(in srgb, var(--corporate-charcoal) 90%, transparent) 52.5% 57.5%, transparent 58%), linear-gradient(140deg, var(--corporate-mauve-gray) 0%, var(--corporate-dusty-mauve) 54%, var(--corporate-terracotta) 54.4%, var(--corporate-plum) 100%); }
+.landing-grain { background-image: radial-gradient(color-mix(in srgb, var(--corporate-rosy-cream) 6%, transparent) 0.65px, transparent 0.7px), linear-gradient(112deg, color-mix(in srgb, var(--corporate-dusty-mauve) 12%, transparent), transparent 32%); background-size: 6px 6px, 100% 100%; }
+.art-shadow { box-shadow: 12px 12px 0 var(--decorative-shadow); }
+.art-shadow:hover { box-shadow: 16px 16px 0 var(--decorative-shadow); }
+.eyebrow-rule::before { content: ""; display: inline-block; width: 2.25rem; height: 1px; margin-right: 0.8rem; vertical-align: middle; background: currentColor; }
+.entrance-reveal { animation: entrance-reveal 700ms cubic-bezier(0.2, 0.65, 0.25, 1) both; }
+.entrance-reveal-delayed { animation: entrance-reveal 700ms 130ms cubic-bezier(0.2, 0.65, 0.25, 1) both; }
+@keyframes entrance-reveal { from { opacity: 0; transform: translateY(1rem); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; } }

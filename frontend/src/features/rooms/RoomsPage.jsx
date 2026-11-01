@@ -556,7 +556,7 @@ export function RoomsPage({ roomsService = roomsApi }) {
             </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <button
-                className="min-h-11 rounded-md bg-cruce-danger px-4 py-2 text-sm font-semibold text-white hover:bg-cruce-terracotta focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-paper disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-11 rounded-md bg-cruce-danger px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-cruce-danger/85 focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-paper disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isDeleting}
                 onClick={confirmDelete}
                 type="button"

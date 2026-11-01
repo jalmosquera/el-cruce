@@ -38,22 +38,22 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-stone-950 px-4 py-10 text-stone-100">
-      <section className="w-full max-w-md rounded-2xl border border-stone-700 bg-stone-900 p-6 shadow-2xl sm:p-8">
-        <p className="text-sm font-semibold tracking-[0.18em] text-amber-300 uppercase">El Cruce</p>
-        <h1 className="display-font mt-3 text-4xl text-stone-50">Acceso al equipo</h1>
-        <p className="mt-3 text-sm leading-6 text-stone-300">Ingresá con tus credenciales de trabajo.</p>
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10 text-foreground">
+      <section className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl sm:p-8">
+        <p className="text-sm font-semibold tracking-[0.18em] text-secondary uppercase">El Cruce</p>
+        <h1 className="display-font mt-3 text-4xl text-foreground">Acceso al equipo</h1>
+        <p className="mt-3 text-sm leading-6 text-muted">Ingresá con tus credenciales de trabajo.</p>
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
           <div>
-            <label className="block text-sm font-medium text-stone-100" htmlFor="username">
+            <label className="block text-sm font-medium text-foreground" htmlFor="username">
               Usuario
             </label>
             <input
               aria-describedby={error ? 'login-error' : undefined}
               aria-invalid={Boolean(error)}
               autoComplete="username"
-              className="mt-2 min-h-11 w-full rounded-lg border border-stone-600 bg-stone-950 px-3 text-stone-100 outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-300/40"
+              className="mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-foreground outline-none focus:border-focus-on-dark focus:ring-2 focus:ring-focus-on-dark/40"
               id="username"
               name="username"
               onChange={(event) => setUsername(event.target.value)}
@@ -62,14 +62,14 @@ export function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-100" htmlFor="password">
+            <label className="block text-sm font-medium text-foreground" htmlFor="password">
               Contraseña
             </label>
             <input
               aria-describedby={error ? 'login-error' : undefined}
               aria-invalid={Boolean(error)}
               autoComplete="current-password"
-              className="mt-2 min-h-11 w-full rounded-lg border border-stone-600 bg-stone-950 px-3 text-stone-100 outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-300/40"
+              className="mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-foreground outline-none focus:border-focus-on-dark focus:ring-2 focus:ring-focus-on-dark/40"
               id="password"
               name="password"
               onChange={(event) => setPassword(event.target.value)}
@@ -80,13 +80,13 @@ export function LoginPage() {
           </div>
 
           {error ? (
-            <p className="rounded-lg border border-red-400/50 bg-red-950/40 p-3 text-sm text-red-100" id="login-error" role="alert">
+            <p className="rounded-lg border border-destructive/50 bg-destructive-soft p-3 text-sm text-destructive" id="login-error" role="alert">
               {error}
             </p>
           ) : null}
 
           <button
-            className="min-h-11 w-full rounded-lg bg-amber-300 px-4 py-2 font-semibold text-stone-950 transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2 focus:ring-offset-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-11 w-full rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-focus-on-dark focus:ring-offset-2 focus:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSubmitting}
             type="submit"
           >
@@ -100,7 +100,7 @@ export function LoginPage() {
 
 export function SessionLoading() {
   return (
-    <main className="grid min-h-screen place-items-center bg-stone-950 px-4 text-stone-100">
+    <main className="grid min-h-screen place-items-center bg-background px-4 text-foreground">
       <p aria-live="polite" role="status">Restaurando tu sesión…</p>
     </main>
   )

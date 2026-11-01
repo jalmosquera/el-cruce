@@ -105,10 +105,10 @@ function LanguageSelector({ currentLanguage }) {
             <li key={option.code}>
               <Link
                 aria-current={isCurrent ? 'true' : undefined}
-                className={`inline-flex min-h-11 items-center border px-4 text-xs font-bold uppercase tracking-[0.14em] transition focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd] ${
+                className={`inline-flex min-h-11 items-center border px-4 text-xs font-bold uppercase tracking-[0.14em] transition focus:outline-2 focus:outline-offset-4 focus:outline-focus-on-dark ${
                   isCurrent
-                    ? 'border-[#e1bd78] bg-[#e1bd78] text-[#201d18]'
-                    : 'border-[#f4eddd]/30 text-[#f4eddd] hover:border-[#e1bd78] hover:text-[#e1bd78]'
+                    ? 'border-secondary bg-secondary text-secondary-foreground'
+                    : 'border-foreground/30 text-foreground hover:border-secondary hover:text-secondary'
                 }`}
                 lang={option.code}
                 to={`/carta/${option.code}`}
@@ -128,7 +128,7 @@ function DishItem({ dish, language }) {
 
   return (
     <li className="grid gap-4 py-7 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:gap-6">
-      <span className="display-font text-2xl leading-none text-[#e1bd78]">
+      <span className="display-font text-2xl leading-none text-secondary">
         <span className="sr-only">Plato número </span>
         <span>{dish.visible_number}</span>
       </span>
@@ -137,23 +137,23 @@ function DishItem({ dish, language }) {
           {content.name}
         </h3>
         {content.isTranslated && (
-          <p className="mt-1 text-sm italic text-[#cfc6b5]" lang="es">
+          <p className="mt-1 text-sm italic text-muted" lang="es">
             Original: {dish.spanish_name}
           </p>
         )}
         {content.isMissingTranslation && (
-          <p className="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e1bd78]">
+          <p className="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-secondary">
             Sin traducción disponible
           </p>
         )}
         {content.description && (
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d4cbb9]" lang={content.descriptionLanguage}>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted" lang={content.descriptionLanguage}>
             {content.description}
           </p>
         )}
-        <dl className="mt-4 grid gap-2 text-xs leading-5 text-[#cfc6b5]">
+        <dl className="mt-4 grid gap-2 text-xs leading-5 text-muted">
           <div className="flex flex-wrap gap-x-2">
-            <dt className="font-bold uppercase tracking-[0.12em] text-[#d6b477]">Alérgenos</dt>
+            <dt className="font-bold uppercase tracking-[0.12em] text-secondary">Alérgenos</dt>
             <dd>
               {dish.allergens.length > 0 ? (
                 <ul className="flex flex-wrap gap-x-2">
@@ -167,12 +167,12 @@ function DishItem({ dish, language }) {
             </dd>
           </div>
           <div className="flex flex-wrap gap-x-2">
-            <dt className="font-bold uppercase tracking-[0.12em] text-[#d6b477]">Disponibilidad</dt>
+            <dt className="font-bold uppercase tracking-[0.12em] text-secondary">Disponibilidad</dt>
             <dd>{dish.is_available ? 'Disponible' : 'No disponible'}</dd>
           </div>
         </dl>
       </div>
-      <p className="text-sm font-semibold tabular-nums text-[#f4eddd] sm:pt-1 sm:text-right sm:text-base">
+      <p className="text-sm font-semibold tabular-nums text-foreground sm:pt-1 sm:text-right sm:text-base">
         <span className="sr-only">Precio: </span>
         <span>{formatPrice(dish.price, language)}</span>
       </p>
@@ -186,7 +186,7 @@ function MenuCategory({ category, language }) {
 
   return (
     <section aria-labelledby={`menu-category-${category.id}`} className="scroll-mt-8">
-      <header className="flex flex-col gap-3 border-b border-[#d6b477]/40 pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-3 border-b border-secondary/40 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2
             className="display-font text-4xl leading-none tracking-[-0.04em] sm:text-5xl"
@@ -196,24 +196,24 @@ function MenuCategory({ category, language }) {
             {content.name}
           </h2>
           {content.isTranslated && (
-            <p className="mt-2 text-sm italic text-[#cfc6b5]" lang="es">
+            <p className="mt-2 text-sm italic text-muted" lang="es">
               Original: {category.spanish_name}
             </p>
           )}
           {content.isMissingTranslation && (
-            <p className="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e1bd78]">
+            <p className="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-secondary">
               Sin traducción disponible
             </p>
           )}
         </div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#d6b477]">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-secondary">
           {dishCount === 1 ? '1 plato' : `${dishCount} platos`}
         </p>
       </header>
       {dishCount === 0 ? (
-        <p className="py-6 text-sm text-[#cfc6b5]">No hay platos publicados en esta categoría.</p>
+        <p className="py-6 text-sm text-muted">No hay platos publicados en esta categoría.</p>
       ) : (
-        <ul className="divide-y divide-[#f4eddd]/15">
+        <ul className="divide-y divide-foreground/15">
           {category.dishes.map((dish) => (
             <DishItem dish={dish} key={dish.id} language={language} />
           ))}
@@ -329,9 +329,9 @@ export function PublicMenuPage({ pathLanguage = null }) {
   }
 
   return (
-    <div className="landing-grain min-h-screen overflow-x-clip bg-[#131313] text-[#f4eddd]">
+    <div className="landing-grain min-h-screen overflow-x-clip bg-background text-foreground">
       <a
-        className="absolute left-4 top-4 z-50 -translate-y-20 border border-[#d6b477] bg-[#131313] px-4 py-3 text-sm font-semibold text-[#f4eddd] transition focus:translate-y-0 focus:outline-2 focus:outline-offset-2 focus:outline-[#f4eddd]"
+        className="absolute left-4 top-4 z-50 -translate-y-20 border border-secondary bg-background px-4 py-3 text-sm font-semibold text-foreground transition focus:translate-y-0 focus:outline-2 focus:outline-offset-2 focus:outline-focus-on-dark"
         href="#contenido"
       >
         Saltar al contenido
@@ -342,12 +342,12 @@ export function PublicMenuPage({ pathLanguage = null }) {
         className="mx-auto w-full max-w-6xl px-5 pb-20 pt-28 sm:px-8 sm:pt-32 lg:px-12 lg:pb-28"
         id="contenido"
       >
-        <header className="border-b border-[#f4eddd]/20 pb-10">
-          <p className="eyebrow-rule text-xs font-bold uppercase tracking-[0.22em] text-[#e1bd78]">Carta</p>
+        <header className="border-b border-foreground/20 pb-10">
+          <p className="eyebrow-rule text-xs font-bold uppercase tracking-[0.22em] text-secondary">Carta</p>
           <h1 className="display-font mt-6 max-w-3xl text-5xl leading-[0.92] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
             La carta de El Cruce.
           </h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-[#cfc6b5]">
+          <p className="mt-6 max-w-2xl text-base leading-7 text-muted">
             Platos publicados con sus precios, alérgenos declarados y disponibilidad actualizada.
           </p>
         </header>
@@ -355,14 +355,14 @@ export function PublicMenuPage({ pathLanguage = null }) {
         <LanguageSelector currentLanguage={currentLanguage} />
 
         {state.status === 'success' && state.usedFallback && (
-          <p className="mt-6 border border-[#d6b477]/45 bg-[#1e2920] px-4 py-3 text-sm leading-6 text-[#eee6d5]" role="status">
+          <p className="mt-6 border border-secondary/45 bg-surface px-4 py-3 text-sm leading-6 text-foreground" role="status">
             El idioma solicitado no está disponible. Mostramos la carta en español.
           </p>
         )}
 
         <div className="mt-10" aria-live="polite">
           {state.status === 'loading' && (
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#d6b477]" role="status">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-secondary" role="status">
               Cargando la carta…
             </p>
           )}
@@ -372,13 +372,13 @@ export function PublicMenuPage({ pathLanguage = null }) {
         </div>
 
         {state.status === 'error' && (
-          <div className="border border-[#b24932]/60 bg-[#2a1d19] p-6 sm:p-8" role="alert">
+          <div className="border border-destructive/60 bg-destructive-soft p-6 text-destructive sm:p-8" role="alert">
             <p className="display-font text-2xl">{ERROR_COPY[state.errorKind].title}</p>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-[#d4cbb9]">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
               {ERROR_COPY[state.errorKind].detail}
             </p>
             <button
-              className="mt-5 inline-flex min-h-11 items-center border border-[#e1bd78] px-5 text-xs font-bold uppercase tracking-[0.16em] text-[#e1bd78] transition hover:bg-[#e1bd78] hover:text-[#201d18] focus:outline-2 focus:outline-offset-4 focus:outline-[#f4eddd]"
+              className="mt-5 inline-flex min-h-11 items-center border border-secondary px-5 text-xs font-bold uppercase tracking-[0.16em] text-secondary transition hover:bg-secondary hover:text-secondary-foreground focus:outline-2 focus:outline-offset-4 focus:outline-focus"
               onClick={retry}
               type="button"
             >
@@ -389,7 +389,7 @@ export function PublicMenuPage({ pathLanguage = null }) {
 
         {state.status === 'success' && (
           categories.length === 0 ? (
-            <p className="border border-[#f4eddd]/20 px-5 py-8 text-sm leading-6 text-[#cfc6b5]">
+            <p className="border border-foreground/20 px-5 py-8 text-sm leading-6 text-muted">
               La carta todavía no tiene platos publicados.
             </p>
           ) : (
