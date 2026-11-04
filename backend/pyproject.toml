@@ -1,0 +1,47 @@
+[project]
+name = "elcruce-backend"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=6.1.2",
+    "django-cors-headers>=4.9.0",
+    "djangorestframework>=3.18.3",
+    "djangorestframework-simplejwt>=5.5.1",
+    "gunicorn>=23.0.0",
+    "psycopg[binary]>=3.3.6",
+    "segno>=1.6.6",
+]
+
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+testpaths = ["tests"]
+addopts = "--strict-markers --cov=config --cov=employees --cov=guests --cov=identity --cov=rooms --cov=menu --cov=qr_codes --cov=reservations --cov-branch --cov-report=term-missing --cov-report=xml"
+
+[tool.coverage.run]
+branch = true
+source = ["config", "employees", "guests", "identity", "rooms", "menu", "qr_codes", "reservations"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*.py" = ["F403", "F405"]
+
+[dependency-groups]
+dev = [
+    "pillow>=13.0.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-django>=4.14.0",
+    "ruff>=0.17.2",
+    "zxing-cpp>=3.1.1",
+]

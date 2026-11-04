@@ -1,0 +1,90 @@
+import { useState } from 'react'
+import { Link, useLocation } from 'react-router'
+
+const navigationItems = [
+  { href: '#restaurante', label: 'Restaurante' },
+  { href: '#estancia', label: 'Estancia' },
+  { href: '/carta', label: 'Carta' },
+  { href: '#contacto', label: 'Ubicación' },
+]
+
+const DESKTOP_LINK_CLASS = 'border-b border-transparent pb-1 transition hover:border-secondary hover:text-secondary focus:outline-2 focus:outline-offset-4 focus:outline-focus-on-dark'
+const MOBILE_LINK_CLASS = 'block py-2 transition hover:text-secondary focus:outline-2 focus:outline-offset-4 focus:outline-focus-on-dark'
+
+export function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { pathname, search } = useLocation()
+  const selectedLanguage = new URLSearchParams(search).get('language')
+
+  function closeMenu() {
+    setIsMenuOpen(false)
+  }
+
+  function resolveHref(href) {
+    return pathname !== '/' ? `/${href}` : href
+  }
+
+  function resolveMenuHref() {
+    const pathLanguage = pathname.match(/^\/carta\/(es|en|fr|de|it)$/)?.[1]
+
+    if (pathLanguage) {
+      return `/carta/${pathLanguage}`
+    }
+
+    return selectedLanguage
+      ? `/carta?language=${encodeURIComponent(selectedLanguage)}`
+      : '/carta'
+  }
+
+  return (
+    <header className="absolute inset-x-0 top-0 z-20 text-foreground">
+      <div className="mx-auto flex max-w-7xl items-center justify-between border-b border-foreground/15 px-5 py-5 sm:px-8 lg:px-12 lg:py-7">
+        <a href="#contenido" className="display-font text-3xl tracking-[-0.05em] transition hover:text-secondary focus:outline-2 focus:outline-offset-4 focus:outline-focus-on-dark">
+          El Cruce
+        </a>
+        <nav aria-label="Navegación principal" className="hidden items-center gap-8 text-[0.68rem] font-semibold uppercase tracking-[0.2em] md:flex">
+          {navigationItems.map((item) => (
+            item.href.startsWith('#') ? (
+              <a key={item.href} href={resolveHref(item.href)} className={DESKTOP_LINK_CLASS}>
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.href} to={resolveMenuHref()} className={DESKTOP_LINK_CLASS}>
+                {item.label}
+              </Link>
+            )
+          ))}
+        </nav>
+        <button
+          type="button"
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-navigation"
+          onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+          className="grid size-11 place-items-center rounded-full border border-foreground/50 bg-background/30 text-xs font-semibold uppercase tracking-[0.12em] transition hover:border-secondary hover:text-secondary focus:outline-2 focus:outline-offset-4 focus:outline-focus-on-dark md:hidden"
+        >
+          <span className="sr-only">{isMenuOpen ? 'Cerrar' : 'Abrir'} navegación</span>
+          <span aria-hidden="true">{isMenuOpen ? '×' : 'Menú'}</span>
+        </button>
+      </div>
+      {isMenuOpen && (
+        <nav id="mobile-navigation" aria-label="Navegación móvil" className="border-y border-foreground/20 bg-background/95 px-5 py-6 backdrop-blur-sm md:hidden">
+          <ul className="mx-auto grid max-w-7xl gap-4 text-sm font-semibold uppercase tracking-[0.16em]">
+            {navigationItems.map((item) => (
+              <li key={item.href}>
+                {item.href.startsWith('#') ? (
+                  <a href={resolveHref(item.href)} onClick={closeMenu} className={MOBILE_LINK_CLASS}>
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link to={resolveMenuHref()} onClick={closeMenu} className={MOBILE_LINK_CLASS}>
+                    {item.label}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+    </header>
+  )
+}
