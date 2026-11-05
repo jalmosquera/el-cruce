@@ -325,3 +325,4 @@ Keep important project files tracked
 !package-lock.json
 !pnpm-lock.yaml
 !yarn.lock
+.vercel
