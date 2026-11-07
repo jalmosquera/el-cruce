@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from identity.models import User, UserRole
 from menu.models import Category, CategoryTranslation, Dish, DishTranslation
+from menu.serializers import DishSerializer
 
 pytestmark = pytest.mark.django_db
 
@@ -81,6 +82,30 @@ def test_postgresql_constraints_reject_blank_spanish_source_names(category: Cate
         Dish.objects.create(category=category, visible_number=11, spanish_name="\t", price="1.00")
 
 
+@pytest.mark.parametrize(
+    "image_path",
+    (
+        "https://cdn.example.com/tortilla.webp",
+        "/menu-images/../private.webp",
+        "/menu-images/tortilla.jpg",
+        "/menu-images/tortilla.webp?width=800",
+        "/menu-images/tortilla.webp#preview",
+        "/menu-images/tortilla%2fextra.webp",
+    ),
+)
+def test_postgresql_constraint_rejects_invalid_dish_image_paths(
+    category: Category, image_path: str
+) -> None:
+    with pytest.raises(IntegrityError), transaction.atomic():
+        Dish.objects.create(
+            category=category,
+            visible_number=11,
+            spanish_name="Plato inválido",
+            image_path=image_path,
+            price="1.00",
+        )
+
+
 def test_dish_serializer_rejects_unsupported_and_duplicate_allergens() -> None:
     manager = User.objects.create_user(username="manager", password=PASSWORD, role=UserRole.MANAGER)
 
@@ -92,6 +117,51 @@ def test_dish_serializer_rejects_unsupported_and_duplicate_allergens() -> None:
 
     assert response.status_code == 400
     assert "allergens" in response.data
+
+
+@pytest.mark.parametrize(
+    "image_path",
+    (
+        "https://cdn.example.com/tortilla.webp",
+        "/menu-images/../private.webp",
+        "/menu-images/tortilla.jpg",
+        "/menu-images/tortilla.webp?width=800",
+        "/menu-images/tortilla.webp#preview",
+        "/menu-images/tortilla%2fextra.webp",
+    ),
+)
+def test_dish_serializer_rejects_non_local_webp_image_paths(
+    category: Category, image_path: str
+) -> None:
+    serializer = DishSerializer(
+        data={
+            "category": category.pk,
+            "visible_number": 99,
+            "spanish_name": "Plato",
+            "price": "10.00",
+            "image_path": image_path,
+        }
+    )
+
+    assert serializer.is_valid() is False
+    assert serializer.errors["image_path"] == [
+        "Images must reference a local WebP menu asset."
+    ]
+
+
+def test_dish_serializer_accepts_a_local_webp_image_path(category: Category) -> None:
+    serializer = DishSerializer(
+        data={
+            "category": category.pk,
+            "visible_number": 99,
+            "spanish_name": "Plato",
+            "price": "10.00",
+            "image_path": "/menu-images/99-plato.webp",
+        }
+    )
+
+    assert serializer.is_valid(), serializer.errors
+    assert serializer.validated_data["image_path"] == "/menu-images/99-plato.webp"
 
 
 @pytest.mark.parametrize(
@@ -138,7 +208,7 @@ def test_public_menu_excludes_unpublished_categories_and_dishes(category: Catego
 
     assert response.status_code == 200
     assert response.data["language"] == "es"
-    assert response.data["categories"] == [{"id": category.pk, "name": "Entrantes", "spanish_name": "Entrantes", "translation_available": False, "dishes": [{"id": published.pk, "visible_number": 1, "name": "Publicado", "spanish_name": "Publicado", "description": "", "spanish_description": "", "translation_available": False, "price": "5.00", "allergens": [], "is_available": True}]}]
+    assert response.data["categories"] == [{"id": category.pk, "name": "Entrantes", "spanish_name": "Entrantes", "translation_available": False, "dishes": [{"id": published.pk, "visible_number": 1, "name": "Publicado", "spanish_name": "Publicado", "description": "", "spanish_description": "", "translation_available": False, "image_path": "", "price": "5.00", "allergens": [], "is_available": True}]}]
 
 
 def test_public_menu_uses_persisted_translation_and_keeps_spanish_source(category: Category, published_dish: Dish) -> None:
@@ -155,6 +225,18 @@ def test_public_menu_uses_persisted_translation_and_keeps_spanish_source(categor
     assert dish["description"] == translation.description
     assert dish["spanish_description"] == published_dish.spanish_description
     assert dish["translation_available"] is True
+
+
+def test_public_menu_includes_the_dish_image_path(
+    category: Category, published_dish: Dish
+) -> None:
+    published_dish.image_path = "/menu-images/10-tortilla-espanola.webp"
+    published_dish.save(update_fields=("image_path",))
+
+    response = APIClient().get(PUBLIC_MENU_URL)
+
+    assert response.status_code == 200
+    assert response.data["categories"][0]["dishes"][0]["image_path"] == published_dish.image_path
 
 
 def test_public_menu_falls_back_to_spanish_when_translation_is_absent(published_dish: Dish) -> None:

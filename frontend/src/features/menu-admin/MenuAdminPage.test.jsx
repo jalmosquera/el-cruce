@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { MenuAdminPage } from './MenuAdminPage.jsx'
 
 const CATEGORY = { id: 1, spanish_name: 'Entrantes', is_published: true }
-const DISH = { id: 2, category: 1, visible_number: 10, spanish_name: 'Tortilla española', spanish_description: 'Con patatas.', price: '8.50', allergens: ['eggs'], is_published: true, is_available: true }
+const DISH = { id: 2, category: 1, visible_number: 10, spanish_name: 'Tortilla española', spanish_description: 'Con patatas.', image_path: '/menu-images/01-tortilla-de-patatas.webp', price: '8.50', allergens: ['eggs'], is_published: true, is_available: true }
 const PUBLIC_PREVIEW = { language: 'es', categories: [{ id: 1, name: 'Entrantes', spanish_name: 'Entrantes', dishes: [{ id: 2, visible_number: 10, name: 'Tortilla española', price: '8.50', is_available: true }] }] }
 
 function resource(items = []) {
@@ -49,6 +49,44 @@ describe('MenuAdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     await waitFor(() => expect(service.dishes.update).toHaveBeenCalledWith(2, expect.not.objectContaining({ visible_number: expect.anything() })))
+  })
+
+  it('saves a local WebP image path and keeps its guidance associated with the input', async () => {
+    const service = await renderPage()
+    service.dishes.update.mockResolvedValue({ ...DISH, image_path: '/menu-images/entrantes/02-croquetas-de-jamon.webp' })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[1])
+
+    const imagePath = screen.getByLabelText('Ruta de imagen')
+    expect(screen.getByText(/Sólo se admiten imágenes WebP locales/)).toBeTruthy()
+    fireEvent.change(imagePath, { target: { value: '/menu-images/entrantes/02-croquetas-de-jamon.webp' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(service.dishes.update).toHaveBeenCalledWith(2, expect.objectContaining({ image_path: '/menu-images/entrantes/02-croquetas-de-jamon.webp' })))
+  })
+
+  it.each([
+    ['a remote URL', 'https://example.test/dish.jpg'],
+    ['a query string', '/menu-images/dish.webp?version=1'],
+    ['a fragment', '/menu-images/dish.webp#details'],
+    ['percent encoding', '/menu-images/dish%2Ewebp'],
+    ['a backslash', '/menu-images/folder\\dish.webp'],
+    ['an empty path segment', '/menu-images/folder//dish.webp'],
+    ['a dot path segment', '/menu-images/./dish.webp'],
+    ['a traversal path segment', '/menu-images/../dish.webp'],
+    ['whitespace', '/menu-images/paella española.webp'],
+    ['an at sign', '/menu-images/dish@home.webp'],
+    ['a filename beginning with a dot', '/menu-images/.hidden.webp'],
+  ])('blocks an image path with %s before saving', async (_description, invalidPath) => {
+    const service = await renderPage()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[1])
+    const imagePath = screen.getByLabelText('Ruta de imagen')
+    fireEvent.change(imagePath, { target: { value: invalidPath } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect((await screen.findByRole('alert')).textContent).toContain('Usá una ruta local WebP')
+    expect(imagePath.getAttribute('aria-invalid')).toBe('true')
+    expect(imagePath.getAttribute('aria-describedby')).toBe('dish-image-path-error')
+    expect(service.dishes.update).not.toHaveBeenCalled()
   })
 
   it('creates a translation with its target, language and manual review flag', async () => {

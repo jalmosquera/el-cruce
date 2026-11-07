@@ -47,6 +47,7 @@ class DishSerializer(serializers.ModelSerializer):
             "visible_number",
             "spanish_name",
             "spanish_description",
+            "image_path",
             "price",
             "allergens",
             "is_published",

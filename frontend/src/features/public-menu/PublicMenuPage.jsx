@@ -123,15 +123,46 @@ function LanguageSelector({ currentLanguage }) {
   )
 }
 
+function DishImage({ dish, name }) {
+  const [isUnavailable, setIsUnavailable] = useState(!dish.image_path)
+
+  if (isUnavailable) {
+    return (
+      <div
+        aria-label={`Imagen no disponible para ${name}`}
+        className="aspect-[4/3] bg-surface px-4 text-center text-xs font-bold uppercase tracking-[0.14em] text-muted"
+        role="img"
+      >
+        <span className="flex size-full items-center justify-center border border-dashed border-foreground/20">Imagen no disponible</span>
+      </div>
+    )
+  }
+
+  return (
+    <img
+      alt={`Fotografía de ${name}`}
+      className="aspect-[4/3] w-full bg-surface object-cover"
+      decoding="async"
+      height="720"
+      loading="lazy"
+      onError={() => setIsUnavailable(true)}
+      sizes="(min-width: 640px) 12rem, 100vw"
+      src={dish.image_path}
+      width="960"
+    />
+  )
+}
+
 function DishItem({ dish, language }) {
   const content = localizedContent(dish, language)
 
   return (
-    <li className="grid gap-4 py-7 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:gap-6">
+    <li className="grid gap-4 py-7 sm:grid-cols-[2.5rem_12rem_minmax(0,1fr)_auto] sm:gap-6">
       <span className="display-font text-2xl leading-none text-secondary">
         <span className="sr-only">Plato número </span>
         <span>{dish.visible_number}</span>
       </span>
+      <DishImage dish={dish} name={content.name} />
       <div className="min-w-0">
         <h3 className="display-font text-2xl leading-tight tracking-[-0.02em] sm:text-3xl" lang={content.nameLanguage}>
           {content.name}
