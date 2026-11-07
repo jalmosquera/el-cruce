@@ -133,6 +133,7 @@ class PublicMenuView(APIView):
             "id": dish.pk,
             "visible_number": dish.visible_number,
             **content,
+            "image_path": dish.image_path,
             "price": f"{dish.price:.2f}",
             "allergens": dish.allergens,
             "is_available": dish.is_available,

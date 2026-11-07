@@ -12,6 +12,7 @@ export const DEFAULT_MENU_LANGUAGE = 'es'
 
 const SUPPORTED_LANGUAGE_CODES = MENU_LANGUAGES.map((language) => language.code)
 const DECIMAL_PRICE_PATTERN = /^\d+(\.\d{1,2})?$/
+const LOCAL_MENU_IMAGE_PATH_PATTERN = /^\/menu-images\/(?:[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?\/)*[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?\.webp(?![\s\S])/
 
 // The public contract is validated at the shape level. Intentional permissiveness:
 // descriptions may be empty, allergen codes are not re-checked against a catalog,
@@ -100,6 +101,16 @@ function expectAllergens(value, path) {
   return value
 }
 
+function expectImagePath(value, path) {
+  expectString(value, path)
+
+  if (value && !LOCAL_MENU_IMAGE_PATH_PATTERN.test(value)) {
+    fail(path, 'an empty string or a local WebP menu image path')
+  }
+
+  return value
+}
+
 function validateDish(dish, path) {
   expectRecord(dish, path)
   expectPositiveInteger(dish.id, `${path}.id`)
@@ -109,6 +120,7 @@ function validateDish(dish, path) {
   expectString(dish.description, `${path}.description`)
   expectString(dish.spanish_description, `${path}.spanish_description`)
   expectBoolean(dish.translation_available, `${path}.translation_available`)
+  expectImagePath(dish.image_path, `${path}.image_path`)
   expectPrice(dish.price, `${path}.price`)
   expectAllergens(dish.allergens, `${path}.allergens`)
   expectBoolean(dish.is_available, `${path}.is_available`)

@@ -55,6 +55,7 @@ function menuForLanguage(language) {
             description: 'With potatoes and egg.',
             spanish_description: 'Con patatas y huevo.',
             translation_available: !isSpanish,
+            image_path: '/menu-images/01-tortilla-de-patatas.webp',
             price: '12.30',
             allergens: ['eggs'],
             is_available: true,
@@ -82,6 +83,7 @@ const SPANISH_MENU = {
           description: 'Con patatas y huevo.',
           spanish_description: 'Con patatas y huevo.',
           translation_available: false,
+          image_path: '/menu-images/01-tortilla-de-patatas.webp',
           price: '8.50',
           allergens: ['eggs', 'milk'],
           is_available: true,
@@ -94,6 +96,7 @@ const SPANISH_MENU = {
           description: '',
           spanish_description: '',
           translation_available: false,
+          image_path: '',
           price: '6.00',
           allergens: [],
           is_available: false,
@@ -120,6 +123,7 @@ const ENGLISH_MENU = {
           description: 'With potatoes and egg.',
           spanish_description: 'Con patatas y huevo.',
           translation_available: true,
+          image_path: '/menu-images/01-tortilla-de-patatas.webp',
           price: '8.50',
           allergens: ['eggs'],
           is_available: true,
@@ -146,6 +150,7 @@ const UNTRANSLATED_MENU = {
           description: 'Con patatas y huevo.',
           spanish_description: 'Con patatas y huevo.',
           translation_available: false,
+          image_path: '',
           price: '8.50',
           allergens: ['eggs'],
           is_available: true,
@@ -252,6 +257,32 @@ describe('PublicMenuPage', () => {
     expect(within(category).getByText('With potatoes and egg.')).toBeTruthy()
     expect(within(category).getByText(currencyPattern('en', 8.5))).toBeTruthy()
     expect(screen.queryByText('Sin traducción disponible')).toBeNull()
+  })
+
+  it('renders responsive lazy-loaded dish images and an accessible fallback when absent', async () => {
+    fetchPublicMenu.mockResolvedValue(SPANISH_MENU)
+
+    renderPage()
+
+    const image = await screen.findByRole('img', { name: 'Fotografía de Tortilla española' })
+
+    expect(image.getAttribute('src')).toBe('/menu-images/01-tortilla-de-patatas.webp')
+    expect(image.getAttribute('loading')).toBe('lazy')
+    expect(image.getAttribute('width')).toBe('960')
+    expect(image.getAttribute('height')).toBe('720')
+    expect(image.getAttribute('sizes')).toBe('(min-width: 640px) 12rem, 100vw')
+    expect(screen.getByRole('img', { name: 'Imagen no disponible para Croquetas' })).toBeTruthy()
+  })
+
+  it('replaces a failed dish image with the accessible fallback', async () => {
+    fetchPublicMenu.mockResolvedValue(SPANISH_MENU)
+
+    renderPage()
+
+    const image = await screen.findByRole('img', { name: 'Fotografía de Tortilla española' })
+    fireEvent.error(image)
+
+    expect(screen.getByRole('img', { name: 'Imagen no disponible para Tortilla española' })).toBeTruthy()
   })
 
   it('renders the Spanish name after the translated name in DOM order', async () => {

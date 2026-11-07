@@ -1,8 +1,15 @@
 """Persistence models for the multilingual restaurant menu."""
 
+import re
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+
+MENU_IMAGE_PATH_REGEX = (
+    r"^/menu-images/(?:[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?/)*"
+    r"[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?\.webp$"
+)
 
 
 class TranslationLanguage(models.TextChoices):
@@ -45,6 +52,12 @@ def validate_allergens(value: list[str]) -> None:
         raise ValidationError("Allergens cannot contain duplicate values.")
 
 
+def validate_dish_image_path(value: str) -> None:
+    """Allow only stable, first-party WebP menu assets."""
+    if value and not re.fullmatch(MENU_IMAGE_PATH_REGEX, value):
+        raise ValidationError("Images must reference a local WebP menu asset.")
+
+
 class Category(models.Model):
     """A Spanish-source grouping for menu dishes."""
 
@@ -76,6 +89,11 @@ class Dish(models.Model):
     visible_number = models.PositiveIntegerField(unique=True)
     spanish_name = models.CharField(max_length=160)
     spanish_description = models.TextField(blank=True)
+    image_path = models.CharField(
+        blank=True,
+        max_length=255,
+        validators=[validate_dish_image_path],
+    )
     price = models.DecimalField(decimal_places=2, max_digits=8)
     allergens = models.JSONField(default=list, validators=[validate_allergens])
     is_published = models.BooleanField(default=False)
@@ -95,6 +113,10 @@ class Dish(models.Model):
             models.CheckConstraint(
                 condition=Q(spanish_name__regex=r"\S"),
                 name="menu_dish_spanish_name_non_blank",
+            ),
+            models.CheckConstraint(
+                condition=Q(image_path="") | Q(image_path__regex=MENU_IMAGE_PATH_REGEX),
+                name="menu_dish_image_path_local_webp",
             ),
         ]
 

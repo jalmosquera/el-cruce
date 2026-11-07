@@ -23,6 +23,7 @@ function validPayload() {
             description: 'With potatoes and egg.',
             spanish_description: 'Con patatas y huevo.',
             translation_available: true,
+            image_path: '/menu-images/07-ensalada-mediterranea.webp',
             price: '8.50',
             allergens: ['eggs'],
             is_available: true,
@@ -116,6 +117,20 @@ describe('public menu payload validation', () => {
     ['dish description is not a string', () => mutateDish((dish) => { dish.description = null })],
     ['dish spanish description is not a string', () => mutateDish((dish) => { dish.spanish_description = 0 })],
     ['dish translation flag is not boolean', () => mutateDish((dish) => { dish.translation_available = 1 })],
+    ['image path is missing', () => mutateDish((dish) => { dish.image_path = undefined })],
+    ['image path is not a string', () => mutateDish((dish) => { dish.image_path = null })],
+    ['image path is not a local WebP asset', () => mutateDish((dish) => { dish.image_path = 'https://example.test/dish.jpg' })],
+    ['image path includes traversal', () => mutateDish((dish) => { dish.image_path = '/menu-images/../dish.webp' })],
+    ['image path includes a query string', () => mutateDish((dish) => { dish.image_path = '/menu-images/dish.webp?version=1' })],
+    ['image path includes a fragment', () => mutateDish((dish) => { dish.image_path = '/menu-images/dish.webp#details' })],
+    ['image path includes percent encoding', () => mutateDish((dish) => { dish.image_path = '/menu-images/dish%2Ewebp' })],
+    ['image path includes a backslash', () => mutateDish((dish) => { dish.image_path = '/menu-images/folder\\dish.webp' })],
+    ['image path includes an empty segment', () => mutateDish((dish) => { dish.image_path = '/menu-images/folder//dish.webp' })],
+    ['image path includes a dot segment', () => mutateDish((dish) => { dish.image_path = '/menu-images/./dish.webp' })],
+    ['image path includes whitespace', () => mutateDish((dish) => { dish.image_path = '/menu-images/paella española.webp' })],
+    ['image path includes an at sign', () => mutateDish((dish) => { dish.image_path = '/menu-images/dish@home.webp' })],
+    ['image path starts its filename with a dot', () => mutateDish((dish) => { dish.image_path = '/menu-images/.hidden.webp' })],
+    ['image path ends with a newline', () => mutateDish((dish) => { dish.image_path = '/menu-images/dish.webp\n' })],
     ['price is not a string', () => mutateDish((dish) => { dish.price = 8.5 })],
     ['price is blank', () => mutateDish((dish) => { dish.price = ' ' })],
     ['price is not numeric', () => mutateDish((dish) => { dish.price = 'ocho' })],
@@ -162,6 +177,20 @@ describe('public menu payload validation', () => {
       dish.description = ''
       dish.spanish_description = ''
     })
+    captureRequest(payload)
+
+    await expect(fetchPublicMenu('en')).resolves.toEqual(payload)
+  })
+
+  it('accepts an empty image path for dishes without a photograph', async () => {
+    const payload = mutateDish((dish) => { dish.image_path = '' })
+    captureRequest(payload)
+
+    await expect(fetchPublicMenu('en')).resolves.toEqual(payload)
+  })
+
+  it('accepts a nested local image path with grammar-compliant segments', async () => {
+    const payload = mutateDish((dish) => { dish.image_path = '/menu-images/entrantes-2026/tortilla.espanola.webp' })
     captureRequest(payload)
 
     await expect(fetchPublicMenu('en')).resolves.toEqual(payload)
