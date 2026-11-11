@@ -16,11 +16,11 @@ dependencies = [
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 testpaths = ["tests"]
-addopts = "--strict-markers --cov=config --cov=employees --cov=guests --cov=identity --cov=rooms --cov=menu --cov=qr_codes --cov=reservations --cov-branch --cov-report=term-missing --cov-report=xml"
+addopts = "--strict-markers --cov=config --cov=employees --cov=guests --cov=identity --cov=rooms --cov=menu --cov=qr_codes --cov=reservations --cov=business_configuration --cov-branch --cov-report=term-missing --cov-report=xml"
 
 [tool.coverage.run]
 branch = true
-source = ["config", "employees", "guests", "identity", "rooms", "menu", "qr_codes", "reservations"]
+source = ["config", "employees", "guests", "identity", "rooms", "menu", "qr_codes", "reservations", "business_configuration"]
 
 [tool.coverage.report]
 fail_under = 80

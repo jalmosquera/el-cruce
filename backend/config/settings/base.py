@@ -306,6 +306,7 @@ INSTALLED_APPS = [
     "menu",
     "qr_codes",
     "reservations",
+    "business_configuration",
 ]
 
 MIDDLEWARE = [
