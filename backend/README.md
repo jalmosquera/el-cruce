@@ -145,10 +145,27 @@ uv run pytest
 ```
 
 The test configuration collects `tests/`, runs branch coverage for `config`,
-`employees`, `guests`, `identity`, `rooms`, `menu`, `qr_codes`, and `reservations`, and
+`business_configuration`, `employees`, `guests`, `identity`, `rooms`, `menu`, `qr_codes`, and `reservations`, and
 fails if total coverage is below 80%. It writes `coverage.xml` for CI;
 the file is ignored by Git. Do not run database tests with production
 credentials or a non-disposable PostgreSQL server.
+
+## Business configuration API
+
+`/api/configuration/public/` is anonymous and read-only; it returns restaurant
+hours, accommodation operational settings, and only the published public palette.
+Manager and administrator access is required for all remaining routes:
+
+- `GET /api/configuration/` — complete internal overview.
+- `GET|PUT /api/configuration/restaurant-schedule/` — atomic weekly and special
+  Europe/Madrid schedule replacement.
+- `GET|PUT /api/configuration/accommodation/` — accommodation intervals,
+  instructions, and date exceptions.
+- `GET|POST /api/configuration/palettes/` — list palettes or create a five-HEX
+  custom palette.
+- `PUT /api/configuration/draft-palette/` — select a private draft palette.
+- `POST /api/configuration/publish-palette/` — publish the draft after WCAG AA
+  text/background and primary/background validation.
 
 ## Permanent QR public origin
 

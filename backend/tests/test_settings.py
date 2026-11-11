@@ -508,6 +508,7 @@ def test_root_url_configuration_registers_approved_domain_routes() -> None:
         "api/menu/",
         "api/qr-codes/",
         "api/reservations/",
+        "api/configuration/",
         "api/",
         "q/",
     ]

@@ -22,6 +22,7 @@ urlpatterns = [
     path("api/menu/", include("menu.urls")),
     path("api/qr-codes/", include("qr_codes.urls")),
     path("api/reservations/", include("reservations.urls")),
+    path("api/configuration/", include("business_configuration.urls")),
     path("api/", include("employees.urls")),
     path("q/", include("qr_codes.public_urls")),
 ]
