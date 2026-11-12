@@ -21,3 +21,21 @@ describe('DESIGN-01 palette', () => {
     expect(stylesheet).toContain('Terracotta is an accent only and is not used for destructive states.')
   })
 })
+
+describe('ADMIN-01 scoped palette', () => {
+  it('keeps the independent white-and-blue tokens within the admin scope', () => {
+    expect(stylesheet).toContain('.admin-theme {')
+
+    for (const token of [
+      '--background: #F8FAFC', '--surface: #FFF', '--primary: #02045E',
+      '--secondary: #1E3A8A', '--foreground: #0F172A', '--muted: #64748B', '--border: #E2E8F0',
+    ]) {
+      expect(stylesheet).toContain(token)
+    }
+
+    expect(stylesheet).toContain('--destructive: #B91C1C')
+    expect(stylesheet).toContain('--success: #166534')
+    expect(stylesheet).toContain('--focus-on-dark: #BFDBFE')
+    expect(stylesheet).toContain('--color-cruce-paper: var(--surface)')
+  })
+})

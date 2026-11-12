@@ -34,6 +34,7 @@ describe('authentication flow', () => {
     renderApp('/login', authService)
 
     await screen.findByRole('heading', { name: 'Acceso al equipo' })
+    expect(screen.getByRole('main').parentElement?.classList.contains('admin-theme')).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }))
 
     expect(screen.getByRole('alert').textContent).toContain('Ingresá tu usuario y contraseña para continuar.')
@@ -53,6 +54,7 @@ describe('authentication flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }))
 
     expect(await screen.findByRole('heading', { name: 'Bienvenido, ana' })).toBeTruthy()
+    expect(document.querySelector('[data-dashboard-shell]')?.parentElement?.classList.contains('admin-theme')).toBe(true)
     expect(authService.login).toHaveBeenCalledWith({ username: 'ana', password: 'secreta' })
     expect(screen.getByRole('link', { name: 'Operaciones' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Administración' })).toBeNull()

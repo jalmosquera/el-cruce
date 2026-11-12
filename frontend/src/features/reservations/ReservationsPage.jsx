@@ -164,7 +164,7 @@ export function ReservationsPage({ reservationsService = defaultService, roomsSe
         {!isLoading && !loadError && reservations.length === 0 ? <p className="mt-6 rounded-xl border border-dashed border-cruce-line bg-cruce-paper p-6 text-cruce-muted">Todavía no hay reservas registradas.</p> : null}
         {!isLoading && !loadError && visibleReservations.length > 0 ? <ReservationList guestById={guestById} onEdit={openEdit} onTransition={transition} reservations={visibleReservations} roomById={roomById} /> : null}
       </div>
-      {isFormOpen ? createPortal(<ReservationDialog availableRoomIds={availableRoomIds} checkingAvailability={checkingAvailability} closeRef={formCloseRef} dialogRef={formDialogRef} editing={editing} errors={errors} form={form} guests={guests} isSaving={isSaving} onChange={handleChange} onCheckAvailability={checkAvailability} onClose={closeForm} onSubmit={submit} rooms={rooms} />, document.body) : null}
+      {isFormOpen ? createPortal(<div className="admin-theme"><ReservationDialog availableRoomIds={availableRoomIds} checkingAvailability={checkingAvailability} closeRef={formCloseRef} dialogRef={formDialogRef} editing={editing} errors={errors} form={form} guests={guests} isSaving={isSaving} onChange={handleChange} onCheckAvailability={checkAvailability} onClose={closeForm} onSubmit={submit} rooms={rooms} /></div>, document.body) : null}
     </section>
   )
 }
