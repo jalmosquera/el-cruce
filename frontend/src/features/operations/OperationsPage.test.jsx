@@ -83,6 +83,9 @@ describe('OperationsPage', () => {
     const cancelButton = within(dialog).getByRole('button', { name: 'Cancelar' })
     const confirmButton = within(dialog).getByRole('button', { name: 'Eliminar' })
 
+    expect(within(dialog).getByText(/Esta acción no se puede deshacer/).className).toContain('text-blue-50')
+    expect(cancelButton.className).toContain('focus:ring-focus-on-dark')
+    expect(confirmButton.className).toContain('focus:ring-focus-on-dark')
     expect(document.activeElement).toBe(cancelButton)
     expect(dialog.getAttribute('aria-modal')).toBe('true')
     expect(dialog.getAttribute('aria-labelledby')).toBe('confirm-title')

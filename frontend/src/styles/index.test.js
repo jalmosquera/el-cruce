@@ -27,7 +27,7 @@ describe('ADMIN-01 scoped palette', () => {
     expect(stylesheet).toContain('.admin-theme {')
 
     for (const token of [
-      '--background: #F8FAFC', '--surface: #FFF', '--primary: #2563EB',
+      '--background: #F8FAFC', '--surface: #FFF', '--primary: #02045E',
       '--secondary: #1E3A8A', '--foreground: #0F172A', '--muted: #64748B', '--border: #E2E8F0',
     ]) {
       expect(stylesheet).toContain(token)
