@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useAuthSession } from '../auth/useAuthSession.js'
+import { AdminTheme } from './AdminTheme.jsx'
 
 const NAVIGATION_BY_ROLE = {
   administrator: [
@@ -71,46 +72,48 @@ export function DashboardShell() {
   }
 
   return (
-    <div className="min-h-screen bg-cruce-ink text-cruce-ink" data-dashboard-shell="true">
-      <a className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:min-h-11 focus:rounded-md focus:bg-cruce-amber focus:px-4 focus:py-3 focus:font-semibold focus:text-cruce-ink focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-ink" href="#dashboard-content">
-        Ir al contenido principal
-      </a>
-      <header className="border-b border-cruce-panel-muted bg-cruce-ink text-cruce-ivory">
+    <AdminTheme>
+      <div className="min-h-screen bg-background text-foreground" data-dashboard-shell="true">
+        <a className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:min-h-11 focus:rounded-md focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 focus:ring-offset-background" href="#dashboard-content">
+          Ir al contenido principal
+        </a>
+        <header className="border-b border-blue-900 bg-secondary text-secondary-foreground">
         <div className="mx-auto flex max-w-[82rem] flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between md:py-5">
           <div className="min-w-0">
-            <p className="text-xs font-semibold tracking-[0.18em] text-cruce-amber uppercase">El Cruce</p>
+            <p className="text-xs font-semibold tracking-[0.18em] text-blue-200 uppercase">El Cruce</p>
             <p className="display-font mt-0.5 text-2xl leading-none">Panel de gestión</p>
           </div>
           <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
-            <p className="min-w-0 text-sm leading-5 sm:text-right"><span className="block truncate font-semibold">{user.username}</span><span className="block text-cruce-ivory/70">{ROLE_LABELS[user.role] ?? user.role}</span></p>
-            <button className="min-h-11 shrink-0 rounded-md border border-cruce-ivory/45 px-4 py-2 text-sm font-semibold text-cruce-ivory hover:border-cruce-amber hover:bg-cruce-panel hover:text-cruce-amber focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-ink" onClick={handleLogout} type="button">Cerrar sesión</button>
+            <p className="min-w-0 text-sm leading-5 sm:text-right"><span className="block truncate font-semibold">{user.username}</span><span className="block text-blue-200">{ROLE_LABELS[user.role] ?? user.role}</span></p>
+            <button className="min-h-11 shrink-0 rounded-md border border-blue-200/60 px-4 py-2 text-sm font-semibold text-secondary-foreground hover:border-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-focus-on-dark focus:ring-offset-2 focus:ring-offset-secondary" onClick={handleLogout} type="button">Cerrar sesión</button>
           </div>
-          {logoutError ? <p className="w-full text-sm text-cruce-danger-soft md:text-right" role="alert">{logoutError}</p> : null}
+          {logoutError ? <p className="w-full text-sm text-red-100 md:text-right" role="alert">{logoutError}</p> : null}
         </div>
       </header>
       <div className="mx-auto grid max-w-[82rem] md:grid-cols-[15rem_minmax(0,1fr)]">
-        <nav aria-label="Navegación del panel" className="border-b border-cruce-panel-muted bg-cruce-panel px-4 py-3 text-cruce-ivory md:min-h-[calc(100vh-6.5rem)] md:border-r md:border-b-0 md:px-5 md:py-6">
+        <nav aria-label="Navegación del panel" className="border-b border-border bg-surface px-4 py-3 text-foreground md:min-h-[calc(100vh-6.5rem)] md:border-r md:border-b-0 md:px-5 md:py-6">
           <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:mx-0 md:flex-col md:overflow-visible md:px-0">
             {navigation.map((item) => (
               <li className="shrink-0 md:shrink" key={item.to}>
-                <NavLink className={({ isActive }) => `block min-h-11 rounded-md border px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-cruce-focus focus:ring-offset-2 focus:ring-offset-cruce-panel ${isActive ? 'border-cruce-amber bg-cruce-amber text-cruce-ink shadow-sm' : 'border-transparent text-cruce-ivory/80 hover:border-cruce-ivory/20 hover:bg-cruce-panel-muted hover:text-cruce-ivory'}`} end={item.end} to={item.to}>{item.label}</NavLink>
+                <NavLink className={({ isActive }) => `block min-h-11 rounded-md border px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 focus:ring-offset-surface ${isActive ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-transparent text-muted-foreground hover:border-border hover:bg-surface-raised hover:text-foreground'}`} end={item.end} to={item.to}>{item.label}</NavLink>
               </li>
             ))}
           </ul>
         </nav>
-        <main className="min-w-0 bg-cruce-ivory p-4 sm:p-6 lg:p-8" id="dashboard-content">
+        <main className="min-w-0 bg-background p-4 sm:p-6 lg:p-8" id="dashboard-content">
           <Outlet />
         </main>
       </div>
-    </div>
+      </div>
+    </AdminTheme>
   )
 }
 
 export function DashboardHome() {
   const { user } = useAuthSession()
-  return <section className="max-w-4xl"><p className="text-xs font-semibold tracking-[0.18em] text-cruce-terracotta uppercase">El Cruce</p><h1 className="display-font mt-2 text-3xl sm:text-4xl">Bienvenido, {user.username}</h1><p className="mt-4 max-w-xl leading-7 text-cruce-muted">Seleccioná una sección para consultar y gestionar la operación de El Cruce.</p></section>
+  return <section className="max-w-4xl"><p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">El Cruce</p><h1 className="display-font mt-2 text-3xl sm:text-4xl">Bienvenido, {user.username}</h1><p className="mt-4 max-w-xl leading-7 text-muted-foreground">Seleccioná una sección para consultar y gestionar la operación de El Cruce.</p></section>
 }
 
 export function DashboardPlaceholder({ title }) {
-  return <section className="max-w-4xl"><p className="text-xs font-semibold tracking-[0.18em] text-cruce-terracotta uppercase">Panel de gestión</p><h1 className="display-font mt-2 text-3xl sm:text-4xl">{title}</h1><p className="mt-4 leading-7 text-cruce-muted">Este módulo estará disponible próximamente.</p></section>
+  return <section className="max-w-4xl"><p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">Panel de gestión</p><h1 className="display-font mt-2 text-3xl sm:text-4xl">{title}</h1><p className="mt-4 leading-7 text-muted-foreground">Este módulo estará disponible próximamente.</p></section>
 }

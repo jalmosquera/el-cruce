@@ -22,7 +22,7 @@ function Modal({ children, isLocked, isOpen, onClose, title }) {
   if (!isOpen) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-cruce-ink/80 p-4 sm:items-center">
+    <div className="admin-theme fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-cruce-ink/80 p-4 sm:items-center">
       <section aria-busy={isLocked ? 'true' : undefined} aria-labelledby="menu-dialog-title" aria-modal="true" className="my-auto w-full max-w-2xl rounded-xl bg-cruce-paper p-5 shadow-2xl" ref={dialogRef} role="dialog" tabIndex={-1}>
         <div className="flex items-start justify-between gap-4"><h2 className="display-font text-2xl" id="menu-dialog-title">{title}</h2><button className="min-h-11 rounded-md border border-cruce-line px-3 font-semibold focus:outline-none focus:ring-2 focus:ring-cruce-focus" disabled={isLocked} onClick={onClose} ref={closeRef} type="button">Cerrar</button></div>
         {children}

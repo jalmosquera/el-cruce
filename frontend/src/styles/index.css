@@ -101,6 +101,57 @@
   --color-cruce-success-soft: var(--success-soft);
 }
 
+/*
+ * ADMIN-01 tokens deliberately live below .admin-theme rather than :root.
+ * Public routes retain the restaurant palette while dashboard routes, login,
+ * and dashboard dialogs receive a fixed operational white-and-blue scheme.
+ */
+.admin-theme {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --surface: #FFF;
+  --surface-raised: #EFF6FF;
+  --primary: #2563EB;
+  --primary-foreground: #FFF;
+  --secondary: #1E3A8A;
+  --secondary-foreground: #FFF;
+  --accent: #1E3A8A;
+  --accent-foreground: #FFF;
+  --muted: #64748B;
+  --muted-foreground: #64748B;
+  --border: #E2E8F0;
+  --focus: #1D4ED8;
+  --focus-on-dark: #BFDBFE;
+  --destructive: #B91C1C;
+  --destructive-foreground: #FFF;
+  --destructive-soft: #FEE2E2;
+  --success: #166534;
+  --success-soft: #DCFCE7;
+  --warning: #92400E;
+  --warning-soft: #FEF3C7;
+
+  /* Compatibility tokens keep existing operational controls in the scope. */
+  --color-cruce-ink: var(--foreground);
+  --color-cruce-panel: var(--surface-raised);
+  --color-cruce-panel-muted: #DBEAFE;
+  --color-cruce-ivory: var(--background);
+  --color-cruce-paper: var(--surface);
+  --color-cruce-muted: var(--muted-foreground);
+  --color-cruce-line: var(--border);
+  --color-cruce-amber: var(--primary);
+  --color-cruce-amber-dark: var(--secondary);
+  --color-cruce-focus: var(--focus);
+  --color-cruce-terracotta: var(--primary);
+  --color-cruce-danger: var(--destructive);
+  --color-cruce-danger-soft: var(--destructive-soft);
+  --color-cruce-success: var(--success);
+  --color-cruce-success-soft: var(--success-soft);
+
+  color-scheme: light;
+  background: var(--background);
+  color: var(--foreground);
+}
+
 /* Contrast audit: foreground/background 10.53:1; foreground/surface 6.02:1;
    primary-foreground/primary 10.53:1; muted/background 6.42:1;
    destructive/destructive-soft 7.01:1; success/success-soft 6.19:1.

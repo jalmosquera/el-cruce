@@ -47,13 +47,13 @@ function ConfirmDialog({ itemName, isDeleting, onCancel, onConfirm, triggerEleme
   useConfirmationDialog({ dialogRef, initialFocusRef: cancelButtonRef, isDeleting, isOpen: true, onClose: onCancel, triggerElement })
 
   return createPortal(
-    <div aria-busy={isDeleting} aria-describedby="confirm-description" aria-labelledby="confirm-title" aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4" ref={dialogRef} role="alertdialog" tabIndex="-1">
+    <div aria-busy={isDeleting} aria-describedby="confirm-description" aria-labelledby="confirm-title" aria-modal="true" className="admin-theme fixed inset-0 z-50 grid place-items-center bg-background/80 p-4" ref={dialogRef} role="alertdialog" tabIndex="-1">
       <div className="w-full max-w-md rounded-lg bg-primary p-6 text-primary-foreground shadow-xl">
         <h2 className="display-font text-2xl" id="confirm-title">Confirmar eliminación</h2>
-        <p className="mt-3 text-muted-foreground" id="confirm-description">Vas a eliminar {itemName}. Esta acción no se puede deshacer.</p>
+        <p className="mt-3 text-blue-50" id="confirm-description">Vas a eliminar {itemName}. Esta acción no se puede deshacer.</p>
         <div className="mt-5 flex justify-end gap-3">
-          <button className="min-h-11 rounded-md border border-border px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-focus" disabled={isDeleting} onClick={onCancel} ref={cancelButtonRef} type="button">Cancelar</button>
-          <button className="min-h-11 rounded-md bg-destructive px-4 font-semibold text-destructive-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-focus" disabled={isDeleting} onClick={onConfirm} ref={confirmButtonRef} type="button">{isDeleting ? 'Eliminando…' : 'Eliminar'}</button>
+          <button className="min-h-11 rounded-md border border-border px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-focus-on-dark" disabled={isDeleting} onClick={onCancel} ref={cancelButtonRef} type="button">Cancelar</button>
+          <button className="min-h-11 rounded-md bg-destructive px-4 font-semibold text-destructive-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-focus-on-dark" disabled={isDeleting} onClick={onConfirm} ref={confirmButtonRef} type="button">{isDeleting ? 'Eliminando…' : 'Eliminar'}</button>
         </div>
       </div>
     </div>,

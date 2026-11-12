@@ -4,7 +4,19 @@ import { ReservationsPage } from './ReservationsPage.jsx'
 
 const rooms = [{ id: 1, code: '101', name: 'Doble', capacity: 2, status: 'operational' }, { id: 2, code: '102', name: 'Suite', capacity: 3, status: 'operational' }]
 const guests = [{ id: 8, display_name: 'Ana Pérez', document_number: 'SECRET' }]
-const reservation = { id: 4, room: 1, guest: 8, check_in: '2026-11-10', check_out: '2026-11-12', guest_count: 2, status: 'pending', internal_notes: 'Late arrival' }
+
+function madridDateFromToday(days) {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' })
+  const date = new Date(`${today}T12:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+const CHECK_IN = madridDateFromToday(7)
+const CHECK_OUT = madridDateFromToday(9)
+const INTERMEDIATE_DATE = madridDateFromToday(8)
+const ADJACENT_CHECK_OUT = madridDateFromToday(10)
+const reservation = { id: 4, room: 1, guest: 8, check_in: CHECK_IN, check_out: CHECK_OUT, guest_count: 2, status: 'pending', internal_notes: 'Late arrival' }
 
 function renderPage(overrides = {}) {
   const reservationsService = { listReservations: vi.fn().mockResolvedValue([reservation]), getAvailability: vi.fn().mockResolvedValue({ rooms: [rooms[1]] }), createReservation: vi.fn(), updateReservation: vi.fn(), ...overrides }
@@ -26,12 +38,12 @@ describe('ReservationsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Nueva reserva' }))
     fireEvent.change(screen.getByLabelText('Habitación'), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText('Huésped'), { target: { value: '8' } })
-    fireEvent.change(screen.getByLabelText('Entrada'), { target: { value: '2026-11-10' } })
-    fireEvent.change(screen.getByLabelText('Salida'), { target: { value: '2026-11-12' } })
+    fireEvent.change(screen.getByLabelText('Entrada'), { target: { value: CHECK_IN } })
+    fireEvent.change(screen.getByLabelText('Salida'), { target: { value: CHECK_OUT } })
     fireEvent.click(screen.getByRole('button', { name: 'Consultar disponibilidad' }))
-    await waitFor(() => expect(service.getAvailability).toHaveBeenCalledWith({ checkIn: '2026-11-10', checkOut: '2026-11-12' }))
+    await waitFor(() => expect(service.getAvailability).toHaveBeenCalledWith({ checkIn: CHECK_IN, checkOut: CHECK_OUT }))
     fireEvent.click(screen.getByRole('button', { name: 'Crear reserva' }))
-    await waitFor(() => expect(service.createReservation).toHaveBeenCalledWith(expect.objectContaining({ room: 2, guest: 8, check_in: '2026-11-10', check_out: '2026-11-12' })))
+    await waitFor(() => expect(service.createReservation).toHaveBeenCalledWith(expect.objectContaining({ room: 2, guest: 8, check_in: CHECK_IN, check_out: CHECK_OUT })))
   })
 
   it('preserves form values and surfaces backend overlap errors', async () => {
@@ -40,12 +52,12 @@ describe('ReservationsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Nueva reserva' }))
     fireEvent.change(screen.getByLabelText('Habitación'), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText('Huésped'), { target: { value: '8' } })
-    fireEvent.change(screen.getByLabelText('Entrada'), { target: { value: '2026-11-10' } })
-    fireEvent.change(screen.getByLabelText('Salida'), { target: { value: '2026-11-12' } })
+    fireEvent.change(screen.getByLabelText('Entrada'), { target: { value: CHECK_IN } })
+    fireEvent.change(screen.getByLabelText('Salida'), { target: { value: CHECK_OUT } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear reserva' }))
     await waitFor(() => expect(service.createReservation).toHaveBeenCalled())
     expect(screen.getAllByRole('alert').some((alert) => alert.textContent.includes('overlapping reservation'))).toBe(true)
-    expect(screen.getByLabelText('Entrada').value).toBe('2026-11-10')
+    expect(screen.getByLabelText('Entrada').value).toBe(CHECK_IN)
   })
 
   it('renders only permitted status actions and cancels through PATCH', async () => {
@@ -99,17 +111,17 @@ describe('ReservationsPage', () => {
     renderPage({
       listReservations: vi.fn().mockResolvedValue([
         reservation,
-        { ...reservation, id: 5, check_in: '2026-11-12', check_out: '2026-11-13' },
+        { ...reservation, id: 5, check_in: CHECK_OUT, check_out: ADJACENT_CHECK_OUT },
         { ...reservation, id: 6, room: 2, status: 'checked_out' },
       ]),
     })
     await screen.findByRole('heading', { name: 'Reservas' })
-    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-11-10' } })
-    fireEvent.change(screen.getByLabelText('Hasta (salida exclusiva)'), { target: { value: '2026-11-13' } })
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: CHECK_IN } })
+    fireEvent.change(screen.getByLabelText('Hasta (salida exclusiva)'), { target: { value: ADJACENT_CHECK_OUT } })
 
-    expect(await screen.findByRole('button', { name: 'Editar reserva de 101, 2026-11-10' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Editar reserva de 101, 2026-11-12' })).toBeTruthy()
-    expect(screen.getByLabelText('102 libre el 2026-11-11')).toBeTruthy()
+    expect(await screen.findByRole('button', { name: `Editar reserva de 101, ${CHECK_IN}` })).toBeTruthy()
+    expect(screen.getByRole('button', { name: `Editar reserva de 101, ${CHECK_OUT}` })).toBeTruthy()
+    expect(screen.getByLabelText(`102 libre el ${INTERMEDIATE_DATE}`)).toBeTruthy()
   })
 
   it('creates a modal dialog, traps focus, closes with Escape, and restores the trigger focus', async () => {
@@ -142,8 +154,8 @@ describe('ReservationsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Nueva reserva' }))
     fireEvent.change(screen.getByLabelText('Habitación'), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText('Huésped'), { target: { value: '8' } })
-    fireEvent.change(screen.getByLabelText('Entrada'), { target: { value: '2026-11-10' } })
-    fireEvent.change(screen.getByLabelText('Salida'), { target: { value: '2026-11-12' } })
+    fireEvent.change(screen.getByLabelText('Entrada'), { target: { value: CHECK_IN } })
+    fireEvent.change(screen.getByLabelText('Salida'), { target: { value: CHECK_OUT } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear reserva' }))
 
     await waitFor(() => expect(createReservation).toHaveBeenCalledTimes(1))
